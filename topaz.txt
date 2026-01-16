@@ -216,3 +216,9 @@ Outcomes:
 ✅ Successfully passed QA and shipped to production
 
 “The final solution was reliable, extensible, and production-ready.”
+
+
+“We initially built a Topaz signature feature in a React POS system by treating the signature pad like a normal UI input. It worked locally, but during beta testing—especially on Windows VMs—we saw intermittent failures, tablet lockups, and unclear errors.
+We realized the core issue was that Topaz is hardware-backed and depends on an OS-level service, so React’s lifecycle wasn’t aligned with the hardware lifecycle.
+I rebuilt the integration by explicitly mapping component mount and unmount to starting and stopping the device, centralizing hardware control, adding bounded retries for transient VM issues, and introducing health checks with clear user messaging.
+After the redesign, the feature became stable across environments, passed QA reliably, and was successfully shipped to production.”
