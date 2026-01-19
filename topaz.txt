@@ -222,3 +222,82 @@ Outcomes:
 We realized the core issue was that Topaz is hardware-backed and depends on an OS-level service, so React’s lifecycle wasn’t aligned with the hardware lifecycle.
 I rebuilt the integration by explicitly mapping component mount and unmount to starting and stopping the device, centralizing hardware control, adding bounded retries for transient VM issues, and introducing health checks with clear user messaging.
 After the redesign, the feature became stable across environments, passed QA reliably, and was successfully shipped to production.”
+
+
+1️⃣ Interview-Ready Answer: Why Redux-Persist Is Used
+
+Answer:
+
+Redux-Persist is used to persist Redux state into browser storage so that the application state is not lost on page refresh. It improves user experience by rehydrating the state automatically when the app reloads, avoiding unnecessary re-fetching or re-entering data.
+
+2️⃣ Interview-Ready Answer: What Redux-Persist Provides
+
+Answer:
+
+Redux-Persist provides client-side state persistence, automatic rehydration, storage abstraction (localStorage, sessionStorage), and selective persistence using whitelists and blacklists. It is mainly useful for preserving UI and session-related state.
+
+3️⃣ Interview-Ready Answer: How Redux-Persist Is Implemented
+
+Answer:
+
+Redux-Persist is implemented by wrapping the Redux reducer with persistReducer, configuring a storage engine, and delaying app rendering using PersistGate until the persisted state is restored. On refresh, Redux-Persist rehydrates the stored state into Redux automatically.
+
+4️⃣ Interview-Ready Answer: Why Redux-Persist Is Not Suitable for Business-Critical Data
+
+Answer:
+
+Redux-Persist stores data locally per device, which makes it unsuitable for business-critical or multi-user data. In scenarios like multiple salespeople entering data from different machines, each device maintains its own isolated state, resulting in data inconsistency, lack of synchronization, and no central source of truth.
+
+5️⃣ Interview-Ready Answer: What Data Should Be Persisted
+
+Answer:
+
+We should persist non-critical, user-specific, UI-related state that improves user experience but does not affect business correctness.
+
+Examples:
+
+Authentication tokens (with expiry handling)
+
+User preferences (theme, language)
+
+UI state (sidebar open/closed)
+
+Form drafts or temporary input
+
+Cached read-only API responses
+
+✔ Low risk
+✔ User-specific
+✔ Easy to recover
+
+6️⃣ Interview-Ready Answer: What Data Should NOT Be Persisted
+
+Answer:
+
+We should not persist business-critical, shared, or authoritative data that requires consistency, validation, or real-time accuracy.
+
+Examples:
+
+Sales transactions
+
+Orders and payments
+
+Inventory counts
+
+Financial records
+
+Multi-user shared data
+
+❌ Leads to data inconsistency
+❌ Cannot be trusted as a source of truth
+❌ Not scalable or secure
+
+7️⃣ Interview-Ready Architecture Justification
+
+Answer:
+
+Redux-Persist should be treated as a client-side optimization tool, not a data persistence layer. Business data must always be persisted on the backend where it can be validated, synchronized, audited, and shared across users.
+
+8️⃣ One-Line Interview Closer (Strong Impact)
+
+Redux-Persist improves UX, but backend persistence ensures business correctness.

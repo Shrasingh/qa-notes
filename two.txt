@@ -1,0 +1,23 @@
+S — Situation
+
+“I was working on a POS system where salespeople could bundle items into room-based packages like Living Room or Bedroom, enter a custom package price, and apply savings to the invoice.”
+
+T — Task
+
+“The requirement was strict: a package must never exist without items, applying a package must be deterministic, and the invoice must always be correct.”
+
+A — Action
+
+“We found multiple issues. First, the system allowed ‘phantom packages’—prices applied even when no items were present. Second, the Apply button required two clicks.
+
+I identified that the root cause was mixing UI events with Redux commits. The price input was committing state on onBlur, while the Apply button committed again on onClick, causing a race condition where blur overwrote apply.
+
+I fixed this by enforcing item-count invariants, separating UI typing state into local React state, removing all blur-based Redux updates, and making the Apply button the single transactional point that commits package data atomically.”
+
+R — Result
+
+“This eliminated phantom packages, fixed the two-click issue, made the UI predictable, and ensured invoice correctness. The final solution was simpler, more maintainable, and production-safe for financial transactions.”
+
+🧠 15-SECOND CLOSING LINE (OPTIONAL)
+
+“The key lesson was that blur events aren’t transactional—Redux updates should only happen from explicit user intent like Apply.”
