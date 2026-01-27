@@ -1,5 +1,5 @@
 S — Situation
-
+pos stands for points on sale
 “I was working on a POS system where salespeople could bundle items into room-based packages like Living Room or Bedroom, enter a custom package price, and apply savings to the invoice.”
 
 T — Task
