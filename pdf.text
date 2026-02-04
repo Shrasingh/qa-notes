@@ -1,0 +1,196 @@
+“I built a production-ready invoice system where the frontend controls layout and the backend controls rendering and distribution.
+
+The React frontend is built using npm run build.
+The backend (Express) serves this build as static files, so the app runs as a single deployable service.
+
+When a user creates an invoice, the frontend generates a unique slug and sends the entire invoice form object to
+POST /api/invoice/save.
+
+The backend stores this invoice data temporarily in memory (cache with TTL).
+This data is ephemeral — it only exists to support preview and PDF generation, so we avoid unnecessary DB writes.
+
+When the user clicks “Generate PDF”, the frontend opens
+GET /api/invoice/pdf/:slug.
+
+The backend uses Puppeteer to load the actual frontend invoice page (/internal-invoice/:slug), waits for React, data, and fonts to fully render, and then generates a pixel-perfect PDF.
+
+The generated PDF is:
+
+returned immediately to the user
+
+uploaded asynchronously to Google Drive, with the target folder decided by business rules (store code).
+
+This approach avoids duplicate templates, guarantees visual consistency, and scales cleanly.”
+
+
+Q1: Why not generate PDFs using backend HTML templates?
+
+Answer:
+
+“Using frontend rendering guarantees pixel-perfect consistency.
+Any UI change automatically reflects in the PDF, and we avoid maintaining duplicate templates.”
+
+❓ Q2: Why cache invoice data instead of saving directly to DB?
+
+Answer:
+
+“PDF generation is a short-lived operation.
+Caching avoids unnecessary DB writes, improves latency, and keeps persistence separate from rendering.”
+
+❓ Q3: What happens if the server crashes before PDF generation?
+
+Answer:
+
+“In production, the in-memory cache would be replaced with Redis.
+This allows recovery, horizontal scaling, and fault tolerance.”
+
+❓ Q4: How does this system scale?
+
+Answer:
+
+“Stateless APIs, Redis for cache, containerized Puppeteer workers, and async Drive uploads.
+PDF generation can be offloaded to a job queue if volume increases.”
+
+❓ Q5: Why upload PDFs asynchronously?
+
+Answer:
+
+“The user experience should not depend on third-party storage latency.
+We return the PDF immediately and upload in the background.”
+
+❓ Q6: How do you secure Google Drive access?
+
+Answer:
+
+“OAuth2 with refresh tokens stored in environment variables.
+No secrets are hard-coded, and permission errors are explicitly handled.”
+
+❓ Q7: Why render frontend URLs instead of raw HTML strings?
+
+Answer:
+
+“Rendering real URLs ensures React lifecycle, API calls, fonts, and CSS behave exactly as in production.”
+
+❓ Q8: What would you improve next?
+
+Answer:
+
+“Move cache to Redis, add retryable background jobs for uploads, and introduce audit logging for invoices.”
+“Sales errors were causing negative stock and discontinued item sales, leading to ~30% revenue loss.
+I built a system that validates items, automates payment calculations, and generates consistent invoices, which significantly reduced those issues.”
+Invoice & Inventory Management System
+
+Software Development Engineer Intern / SDE-1
+
+Built a full-stack invoice and inventory system that reduced revenue loss by ~30% by preventing sales errors such as incorrect SKU, item description, grade, and cover selection that previously caused negative stock and discontinued item sales.
+
+Implemented automatic payment calculation across multiple payment modes, eliminating manual entry errors and ensuring accurate totals, balances, and settlements in real time.
+
+Designed a frontend-driven PDF invoice pipeline where the backend renders live frontend routes using Puppeteer, guaranteeing pixel-perfect invoices without maintaining duplicate templates.
+
+Added ephemeral invoice caching with TTL to support fast PDF generation and previews while avoiding unnecessary database writes and improving overall system performance.
+
+Integrated secure Google Drive uploads using OAuth2 and streaming, dynamically routing invoices to different folders based on store and business rules.
+
+Tech: React, Node.js, Express, Puppeteer, REST APIs, Google Drive API, OAuth2
+
+⚡ Ultra-Compact Version (if space is very tight)
+
+Reduced ~30% revenue loss by building an invoice and inventory system that prevented sales mistakes (wrong SKU, description, grade, cover) and blocked negative stock and discontinued item sales.
+
+Automated payment calculation and balance tracking, removing manual errors across multiple payment modes.
+
+Generated pixel-perfect PDFs by rendering frontend routes with Puppeteer and uploading invoices securely to Google Drive.
+🧠 PART 1: FAANG Behavioral STAR Stories
+⭐ STAR Story #1 — Ownership & Impact
+Situation
+
+Sales teams were frequently making mistakes while creating invoices—wrong SKU, description, grade, or cover—which caused negative stock, selling discontinued items, and significant revenue leakage.
+
+Task
+
+I was responsible for designing a system that prevents invalid sales, ensures accurate payments, and reduces operational loss without slowing down sales workflows.
+
+Action
+
+Built a full-stack invoice and inventory validation system that blocks incorrect SKU and discontinued item selection.
+
+Automated payment calculation across multiple payment modes, removing manual entry errors.
+
+Centralized invoice generation so the frontend UI drives both on-screen invoices and PDFs.
+
+Result
+
+Reduced revenue loss by ~30%
+
+Eliminated negative stock creation during sales
+
+Improved trust and accuracy for sales and finance teams
+
+🎯 FAANG signal: Ownership, correctness, business impact
+
+⭐ STAR Story #2 — Technical Design & Trade-offs
+Situation
+
+Invoice PDFs were inconsistent with the UI and required manual correction, leading to disputes and rework.
+
+Task
+
+Design a scalable and maintainable PDF generation system without duplicating templates or business logic.
+
+Action
+
+Used Puppeteer to render live frontend invoice routes into PDFs.
+
+Cached invoice data temporarily (TTL) to avoid unnecessary database writes.
+
+Uploaded PDFs asynchronously to Google Drive using OAuth2 and streaming.
+
+Result
+
+Achieved pixel-perfect PDFs identical to UI
+
+Reduced PDF generation latency
+
+Simplified maintenance by eliminating duplicate templates
+
+🎯 FAANG signal: Architecture, trade-offs, scalability
+
+⭐ STAR Story #3 — Customer Obsession & Reliability
+Situation
+
+Manual payment calculations caused mismatches in totals, balances, and settlements across invoices.
+
+Task
+
+Ensure 100% accurate payment calculations in real time across all payment modes.
+
+Action
+
+Implemented automatic aggregation of payment methods.
+
+Added validations to prevent partial or incorrect payment states.
+
+Synced calculations across invoice preview and PDF output.
+
+Result
+
+Eliminated payment mismatch issues
+
+Reduced invoice disputes
+
+Improved customer and finance team confidence
+
+🎯 FAANG signal: Reliability, correctness, user trust
+
+
+Invoice & Inventory Management System
+
+Engineered a full-stack invoice and inventory management system that prevented incorrect SKU selection, negative stock creation, and discontinued item sales, reducing operational revenue loss by ~30% using validation logic and REST APIs.
+
+Implemented automatic real-time payment calculation and reconciliation across multiple payment modes, eliminating manual errors and ensuring consistent totals, balances, and settlements across UI and generated invoices.
+
+Built a scalable PDF generation pipeline using Node.js, Express, and Puppeteer to render live frontend routes into pixel-perfect invoices and securely upload documents to Google Drive via OAuth2 streaming, improving reliability and maintainability.
+
+Optimized system performance by using ephemeral caching with TTL for invoice data during PDF generation, reducing database writes and improving request latency under concurrent usage.
+
