@@ -1,0 +1,705 @@
+Situation Overview (3 Points – Simple & Clear)
+Manual signature workflow – For phone orders, invoices were generated and emailed manually. Customers had to print, sign, scan, and send them back.
+No real-time tracking – The team had no visibility into whether the document was viewed, signed, or pending.
+Operational bottleneck – Sales and admin teams spent significant time following up for signatures instead of focusing on revenue-generating tasks.
+
+Team Pain Points (5 Points)
+
+High turnaround time – Deals were delayed due to manual follow-ups and email back-and-forth.
+
+Human errors – Missing signatures, unsigned pages, or incorrect document versions caused rework.
+
+No audit trail – Compliance and legal tracking was difficult without a proper signing record.
+
+Low scalability – As phone orders increased, manual processes did not scale efficiently.
+
+Poor customer experience – Customers found printing/scanning inconvenient, leading to friction and drop-offs.
+
+Solution – How We Fixed It Using Automated E-Sign
+
+Integrated Adobe Acrobat Sign API into our backend to programmatically send agreements after invoice generation.
+
+Embedded signature and initial fields using text tags, ensuring required fields were auto-placed and validated.
+
+Automated email dispatch directly to customers with secure signing links.
+
+Implemented webhook listeners to track document lifecycle (sent, viewed, signed, completed).
+
+Stored signed PDFs automatically in our system with audit trails for compliance and retrieval.
+
+Impact (2 Strong FAANG-Level Outcomes)
+
+Reduced signature turnaround time significantly by eliminating manual steps, improving deal closure velocity.
+
+Built a scalable, API-driven workflow that improved operational efficiency, reduced error rates, and enhanced customer experience — demonstrating
+ownership, system thinking, and production-grade integration capability.\
+
+
+
+In our phone order workflow, invoice signatures were handled manually. We generated the PDF, emailed it to customers, and they had to print, sign, scan, and send it back. There was no real-time tracking, signatures were sometimes missing, and sales teams spent significant time following up. As order volume increased, this became a scalability and compliance problem.
+
+My task was to automate the signing process, reduce turnaround time, and build a scalable solution.
+
+I integrated Adobe Acrobat Sign API into our backend so invoices were automatically sent for e-signature after generation. I embedded signature and initial placeholders directly into the PDF template to ensure required fields were validated. I also implemented webhooks to track document lifecycle events and automatically stored signed PDFs with audit trails.
+
+As a result, we significantly reduced signature turnaround time, eliminated manual follow-ups, improved compliance, and built a scalable API-driven workflow that enhanced both operational efficiency and customer experience.
+A webhook is a way for one system to automatically notify another system when an event happens.
+
+
+What is a Webhook?
+
+A webhook is a way for one system to automatically notify another system when an event happens.
+
+Instead of you repeatedly asking:
+
+“Has the document been signed?”
+“Has the document been viewed?”
+
+The external system (Adobe) pushes the update to you automatically.
+
+Think of it like:
+
+Polling = You keep calling Adobe asking “Done? Done? Done?”
+Webhook = Adobe calls you when it’s done.
+
+Why Webhook is Required in E-Sign?
+
+In Adobe Acrobat Sign:
+
+Once you send a document for signature:
+
+Customer may sign in 2 minutes
+
+Or after 2 hours
+
+Or after 2 days
+
+You don’t know when.
+
+Without webhook:
+
+You would need to constantly check Adobe API
+
+That wastes resources
+
+It increases complexity
+
+It does not scale
+
+With webhook:
+
+Adobe notifies your backend instantly
+
+Your system updates automatically
+
+This gives real-time visibility.
+
+How It Works in Adobe E-Sign Flow
+Step 1 – You Send Agreement
+
+Your backend calls Adobe API to create agreement.
+
+Adobe returns:
+
+agreementId
+
+Now document is in “IN_PROCESS” state.
+
+Step 2 – You Register Webhook
+
+You tell Adobe:
+
+“When anything changes for this agreement, call this URL.”
+
+Example:
+
+POST https://yourdomain.com/api/esign/webhook
+
+
+Adobe stores that endpoint.
+
+Step 3 – Event Happens
+
+Customer:
+
+Opens document → status: viewed
+
+Signs document → status: signed
+
+All parties complete → status: completed
+
+At that moment:
+
+Adobe sends HTTP POST request to your backend.
+
+Example payload:
+
+{
+  "event": "AGREEMENT_COMPLETED",
+  "agreementId": "123ABC",
+  "status": "SIGNED"
+}
+
+
+Your backend receives this instantly.
+
+How It Captures the Sign Process
+
+When webhook hits your server:
+
+Your backend:
+
+Verifies request (security check)
+
+Extracts agreementId
+
+Calls Adobe API:
+GET /agreements/{agreementId}/combinedDocument
+
+Downloads signed PDF
+
+Stores it in database or file storage
+
+Updates invoice status to "Signed"
+
+Now your system reflects reality immediately.
+
+Why This Is Important (Interview Angle)
+
+Webhooks provide:
+
+Event-driven architecture
+
+Real-time state synchronization
+
+Scalability (no polling)
+
+Reduced API load
+
+Strong system design maturity
+
+This shows you understand backend architecture beyond just calling APIs.
+
+Simple Analogy (So It Sticks in Your Brain)
+
+Without webhook:
+You keep checking if your friend reached home.
+
+With webhook:
+Your friend messages you when they reach.
+
+That’s it.
+1️⃣ Asynchronous Processing
+What it means
+
+Work does not happen immediately.
+You trigger something.
+The result comes later.
+
+In e-sign example
+
+You send document for signature.
+Customer signs after 2 hours.
+Your system must wait.
+
+It cannot block the server for 2 hours.
+
+So:
+
+You send request.
+
+Adobe processes it.
+
+Later you receive webhook.
+
+That is asynchronous.
+
+Why FAANG cares
+
+Because real systems are never instant.
+Payments, emails, uploads, ML jobs — all are async.
+
+If you understand async → you understand scalable systems.
+
+Memory line:
+
+Request now. Result later.
+
+2️⃣ Event-Driven Systems
+What it means
+
+System reacts to events.
+
+An event = something happened.
+
+Examples:
+
+Document signed
+
+Payment completed
+
+Order shipped
+
+Instead of constantly checking status,
+system waits for event notification.
+
+In Adobe e-sign
+
+Event: AGREEMENT_COMPLETED
+Webhook triggers your backend.
+Backend updates database.
+
+That is event-driven architecture.
+
+Why FAANG cares
+
+Event-driven systems:
+
+Scale better
+
+Are more efficient
+
+Reduce unnecessary API calls
+
+Memory line:
+
+Don’t ask repeatedly. React when notified.
+
+3️⃣ Idempotency (Very Important)
+
+This is a favorite FAANG question.
+
+What it means
+
+If same request comes multiple times,
+result should remain same.
+
+No duplicate side effects.
+
+Why needed in webhooks
+
+Adobe may send webhook twice:
+
+Network glitch
+
+Timeout
+
+Retry logic
+
+If your system blindly processes twice:
+
+You may store duplicate signed PDFs
+
+You may update invoice twice
+
+You may send duplicate emails
+
+That is bad.
+
+How to handle
+
+Store agreementId + eventId in DB.
+
+Before processing:
+
+Check if already processed.
+
+If yes → ignore.
+
+If no → process and mark as done.
+
+That makes system safe.
+
+Memory line:
+
+Same input. Same result. No double action.
+
+4️⃣ Security Verification (HMAC Signature Validation)
+
+Very important for production systems.
+
+Problem
+
+Anyone can send fake POST request to:
+
+/api/esign/webhook
+
+
+They could pretend:
+“Document signed.”
+
+That is dangerous.
+
+Solution
+
+Adobe sends webhook with cryptographic signature header.
+
+Example:
+
+X-Adobe-Signature: abc123hash
+
+
+Your backend:
+
+Uses shared secret key
+
+Recalculates hash
+
+Compares values
+
+If match → valid
+If not → reject request
+
+This is HMAC validation.
+
+Why FAANG cares
+
+Because:
+
+Security awareness
+
+Prevents fraud
+
+Protects system integrity
+
+Memory line:
+
+Trust, but verify.
+
+5️⃣ Retry Handling
+What happens
+
+If your server is down or slow,
+Adobe retries webhook delivery.
+
+Maybe:
+
+After 5 minutes
+
+Then 10 minutes
+
+Then 30 minutes
+
+Why this matters
+
+If your system is not idempotent:
+Retries will break it.
+
+Good system design:
+
+Handles duplicate safely
+
+Logs failures
+
+Responds 200 quickly
+
+Processes heavy work asynchronously
+
+Best practice:
+
+Return 200 OK immediately
+
+Process work in background queue
+
+That is production-grade design.
+
+Memory line:
+
+Systems fail. Design for failure.
+
+6️⃣ Additional Things FAANG May Ask
+
+Here are advanced but simple concepts:
+
+🔹 Scalability
+
+What if 10,000 documents get signed in 1 minute?
+
+Your webhook endpoint must:
+
+Be stateless
+
+Handle concurrent requests
+
+Possibly use message queue (Kafka / SQS)
+
+🔹 Database Design
+
+Store:
+
+agreementId
+invoiceId
+status
+signedAt
+processedFlag
+
+Status transitions:
+CREATED → IN_PROCESS → SIGNED → COMPLETED
+
+🔹 Observability
+
+Add:
+
+Logging
+
+Monitoring
+
+Alerts
+
+If webhook fails 50 times → alert team.
+
+🔹 Failure Handling
+
+What if:
+
+PDF download fails?
+
+Adobe API is down?
+
+Design:
+
+Retry with exponential backoff
+
+Store failed events
+
+Use dead-letter queue
+
+🔹 Consistency Model
+
+Webhook is eventually consistent.
+
+System state may not update instantly.
+
+You must handle temporary mismatch safely.
+
+Interview Smart Summary (Use This)
+
+You can say:
+
+I designed the e-sign workflow using an event-driven architecture. It was asynchronous, webhook-based, idempotent, and secure via HMAC validation. I also ensured retry safety and observability to make it production-ready.
+
+That one sentence shows maturity.
+🔎 Interview Simulation – E-Sign System Design
+1️⃣ Interviewer:
+
+How would you design the webhook endpoint to handle high traffic?
+
+Your Answer:
+
+I would keep the webhook endpoint lightweight and stateless.
+
+Immediately validate the HMAC signature.
+
+Quickly store the event in a message queue.
+
+Return HTTP 200 immediately.
+
+Process heavy logic asynchronously from the queue.
+
+This ensures:
+
+Low response time
+
+No timeout retries
+
+Better scalability under load
+
+2️⃣ Interviewer:
+
+What if Adobe sends the same webhook event 3 times?
+
+Your Answer:
+
+I would make the system idempotent.
+
+Each webhook payload contains:
+
+agreementId
+
+eventId
+
+Before processing, I check in the database:
+If eventId already exists → ignore it.
+
+Only first event triggers business logic.
+
+This prevents:
+
+Duplicate PDF storage
+
+Duplicate status updates
+
+Duplicate notifications
+
+3️⃣ Interviewer:
+
+How do you secure your webhook endpoint?
+
+Your Answer:
+
+I validate HMAC signature using shared secret.
+
+Steps:
+
+Extract signature from request header.
+
+Recalculate hash using payload + secret.
+
+Compare using constant-time comparison.
+
+Reject if mismatch.
+
+Additionally:
+
+Only allow HTTPS.
+
+Restrict IP range if supported.
+
+Log all failed verification attempts.
+
+4️⃣ Interviewer:
+
+What happens if your server is down when Adobe sends webhook?
+
+Your Answer:
+
+Adobe retries webhook delivery automatically.
+
+Because my endpoint is idempotent, retries are safe.
+
+Additionally:
+
+I monitor webhook failures.
+
+Use alerting if repeated failures occur.
+
+Store failed events in dead-letter queue for manual inspection.
+
+System is designed assuming failures will happen.
+
+5️⃣ Interviewer:
+
+How would you scale this system to 1 million agreements per day?
+
+Your Answer:
+
+I would:
+
+Use load-balanced stateless webhook servers.
+
+Push events into distributed queue (Kafka / SQS).
+
+Process in worker services.
+
+Store agreement metadata in indexed database.
+
+Store signed PDFs in object storage like S3.
+
+The webhook layer remains thin.
+Processing layer scales horizontally.
+
+6️⃣ Interviewer:
+
+How do you ensure consistency between Adobe and your system?
+
+Your Answer:
+
+Webhook gives near real-time updates, but I treat it as eventually consistent.
+
+I periodically reconcile:
+
+Query Adobe API for agreement status.
+
+Compare with internal database.
+
+Fix any mismatch.
+
+This ensures strong data integrity.
+
+7️⃣ Interviewer:
+
+What if downloading signed PDF fails?
+
+Your Answer:
+
+I implement retry with exponential backoff.
+
+If retries fail:
+
+Store event in failure queue.
+
+Trigger alert.
+
+Allow manual replay.
+
+System never silently drops failures.
+
+8️⃣ Interviewer:
+
+Why not just poll Adobe API every 5 minutes?
+
+Your Answer:
+
+Polling:
+
+Wastes API calls.
+
+Increases cost.
+
+Adds latency.
+
+Does not scale well.
+
+Webhook:
+
+Event-driven
+
+Efficient
+
+Real-time
+
+Scalable
+
+Event-driven architecture is more production-ready.
+
+9️⃣ Interviewer:
+
+How would you test this system?
+
+Your Answer:
+
+Unit test signature validation logic.
+
+Integration test webhook flow with mock payloads.
+
+Load test webhook endpoint.
+
+Simulate duplicate events.
+
+Chaos test server downtime.
+
+I would also verify idempotency behavior explicitly.
+
+🔟 Interviewer:
+
+What engineering principles did you apply here?
+
+Your Answer:
+
+Asynchronous architecture
+
+Event-driven design
+
+Idempotency
+
+Security-first validation
+
+Scalability via horizontal scaling
+
+Failure-resilient system design
+
+Observability and monitoring
+
+⭐ Strong Closing Line (Use in Interview)
+
+I designed the system assuming failure, duplication, delay, and scale from day one. That mindset helped build a reliable, production-grade e-sign workflow instead of just an API integration.
