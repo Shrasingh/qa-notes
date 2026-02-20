@@ -12,7 +12,7 @@ It relies on a local OS-level service (SigWebTablet)
 
 Browser–hardware communication can fail due to VM timing issues, USB latency, or service availability
 
-A naïve React integration leads to tablet lockups, blank signatures, or inconsistent behavior
+A naive React integration leads to tablet lockups, blank signatures, or inconsistent behavior
 
 T — Task
 

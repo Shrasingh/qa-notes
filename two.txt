@@ -21,3 +21,9 @@ R — Result
 🧠 15-SECOND CLOSING LINE (OPTIONAL)
 
 “The key lesson was that blur events aren’t transactional—Redux updates should only happen from explicit user intent like Apply.”
+
+
+
+Redux = synchronous state container
+React rendering = scheduled & batched
+Middleware = where async logic lives
