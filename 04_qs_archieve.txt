@@ -1,0 +1,34 @@
+We use MySQL as persistent storage, but leverage JSON storage to maintain flexibility of schema and avoid rigid normalization for dynamic invoice structure.
+
+
+
+✔ Durability
+
+MySQL archive
+
+✔ Availability
+
+Cache + DB
+
+✔ Scalability
+
+JSON schema flexible
+
+✔ Future-proofing
+
+Editable flag stored
+
+✔ Idempotent saves
+
+Duplicate slug updates safely
+
+✔ Backward compatibility
+
+Existing cache untouched
+
+We introduced a hybrid persistence model where invoices are stored both in a fast in-memory cache for immediate PDF rendering and in a durable MySQL JSON store for long-term archival.
+
+We enforce business rules such as editability through an explicit editable flag in the database rather than inferring it dynamically, allowing future role-based flexibility.
+
+The slug is made unique to enforce idempotent updates.
+If the slug remains the same, we overwrite the existing document; if it changes, a new record is created automatically due to unique constraint behavior.
