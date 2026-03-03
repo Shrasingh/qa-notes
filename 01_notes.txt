@@ -1,22 +1,13 @@
 1️⃣ Google Drive via OAuth2 Streaming
 ✅ What it is
-
 OAuth2 → secure way to access Google Drive without storing passwords
-
 Streaming upload → sending the PDF directly from memory instead of saving it to disk first
-
 ✅ Why we need it
-
 Problems we wanted to avoid:
-
 ❌ Storing PDFs on server disk (not scalable)
-
 ❌ Hardcoding Google credentials (security risk)
-
 ❌ Upload delays blocking user response
-
 OAuth2 + streaming solves all three.
-
 ✅ How we use it in our application
 
 Flow in your system:
