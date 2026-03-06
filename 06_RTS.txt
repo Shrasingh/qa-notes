@@ -1,0 +1,53 @@
+RTSPanel.jsx
+   │
+   │ (user selects return items + new items)
+   ▼
+handleRTS()
+   │
+   │ POST /api/invoice/save
+   │
+   ▼
+Backend
+   │
+   ├── save in memory cache
+   └── save in MySQL (invoices_archive)
+   │
+   ▼
+navigate("/rts-preview/:slug")
+   │
+   ▼
+RTSPreview.jsx
+   │
+   │ fetch /api/invoice/:slug
+   ▼
+render RTS invoice
+   │
+   │ window.__INVOICE_READY__ = true
+   ▼
+User clicks "Save RTS"
+   │
+   ▼
+GET /api/invoice/pdf/:slug
+   │
+   ▼
+Backend
+   │
+   ├── get invoice from cache
+   ├── detect invoiceType
+   ├── build preview URL
+   ├── Puppeteer opens page
+   │
+   ▼
+generatePdfFromUrl()
+   │
+   ▼
+PDF buffer created
+   │
+   ├── uploadPdfToDrive()
+   └── send PDF to user
+
+
+
+
+user ui -> state snapshot -> database storage -> deterministic rendering -> pdf generation 
+

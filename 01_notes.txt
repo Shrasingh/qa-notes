@@ -9,9 +9,7 @@ Problems we wanted to avoid:
 ❌ Upload delays blocking user response
 OAuth2 + streaming solves all three.
 ✅ How we use it in our application
-
 Flow in your system:
-
 Backend generates PDF in memory (Buffer)
 
 Convert Buffer → stream

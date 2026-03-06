@@ -128,7 +128,7 @@ const isQuoteSheet = slug.startsWith("QS_");
 
 Uploads to different Drive folder:
 
-process.env.QUOTESHEET_FOLDER_ID
+process.env.FOLDER_QS
 
 So QuoteSheet = Same engine, different routing logic.
 
@@ -429,7 +429,7 @@ const storeCode = invoice?.sellerNames?.[0]?.storeCode;
 
 Routing:
 
-QS → QUOTESHEET_FOLDER_ID
+QS → FOLDER_QS
 
 S1 → FOLDER_100
 
@@ -472,7 +472,7 @@ That’s exactly what they want to hear.
 🔥 4. Save Your Sale vs QuoteSheet – Architectural Difference
 Feature	Save Your Sale	QuoteSheet
 Slug	original slug	QS_slug
-Drive folder	store based	QUOTESHEET_FOLDER_ID
+Drive folder	store based	FOLDER_QS
 Financial effect	sale	quote
 Inventory commit	sometimes	no
 Database write	yes	maybe no
@@ -1682,7 +1682,7 @@ const isQuoteSheet = slug.startsWith("QS_");
 Now logic decides:
 
 If QuoteSheet:
-→ Upload to QUOTESHEET_FOLDER_ID
+→ Upload to FOLDER_QS
 
 Else if store S1:
 → Upload to FOLDER_100
