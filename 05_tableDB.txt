@@ -87,9 +87,7 @@ Because when PDF route is called immediately after, it reads from cache for spee
 You insert into:
 
 invoices_archive
-
 Structure:
-
 slug VARCHAR UNIQUE
 invoice_type VARCHAR
 editable BOOLEAN
@@ -245,7 +243,6 @@ But simpler consistency model
 2️⃣ Backend Write Path
 
 POST /api/invoice/save
-
 Steps:
 
 Validate payload
@@ -477,38 +474,25 @@ Payment breakdown
 Flags & overrides
 
 If I normalized:
-
 invoices
-
 invoice_items
-
 invoice_payments
-
 invoice_packages
-
 invoice_signatures
-
 invoice_delivery
-
 I would:
-
 ❌ Increase join complexity
 ❌ Increase migration overhead
 ❌ Break backward compatibility when fields change
 ❌ Require multiple writes per invoice
-
 Instead, I chose:
-
 form_json LONGTEXT
-
 This gives:
-
 ✔ Atomic snapshot of entire invoice
 ✔ Backward compatibility
 ✔ Zero migration overhead
 ✔ Simple upsert
 ✔ Faster development iteration
-
 🧠 Tradeoffs (You MUST mention this)
 JSON Snapshot	Relational
 Flexible	Strong structure
@@ -516,17 +500,11 @@ Easy archive	Better analytics
 No schema migration	Strict validation
 Atomic write	Multiple table joins
 When JSON is Correct:
-
 Write-heavy
-
 Read-rarely
-
 Document-based
-
 Immutable record
-
 When relational is better:
-
 Frequent analytics
 
 Aggregations
@@ -1162,6 +1140,5 @@ Are Right, A Lot
 Bias for Action
 
 Invent and Simplify
-
 Think Big
 

@@ -1,0 +1,27 @@
+A UI showing different data for the *same invoice* in two places is rarely a UI problem.
+
+During a recent debugging session in a React/Redux workflow, the preview view displayed correct item data, while another interface consuming the same state showed missing vendor identifiers and pricing fields. Both components were reading from the same logical source of truth, which made the failure mode non-obvious.
+
+The system constraint was straightforward: two item sources — returned items and newly added items — had to be merged into a single state structure before persistence. Multiple components then derived views from that state.
+
+The naive solution was already in place: merge both collections and update the Redux store. That approach worked in most cases but silently failed when the two item sources had slightly different schemas. A shallow merge replaced nested attributes instead of preserving them. Depending on which path the data took, certain fields disappeared while others remained intact.
+
+The key lesson was that the problem was not rendering logic but **schema inconsistency inside the state layer**.
+
+The fix focused on architecture rather than patching consumers:
+
+First, define a strict item schema before any state write.
+Second, normalize all incoming items so every record conforms to that schema.
+Third, enforce a single selector layer so every component derives data from the same normalized structure.
+
+After introducing normalization and schema enforcement, both views rendered identical data and state updates became deterministic.
+
+One signal hiring managers often look for in early-career engineers is **the ability to debug across abstraction boundaries instead of patching symptoms**.
+
+Where have you seen subtle data-shape mismatches create failures in otherwise correct UI logic?
+
+#SoftwareEngineering
+#FrontendArchitecture
+#StateManagement
+#React
+#SystemDesign
