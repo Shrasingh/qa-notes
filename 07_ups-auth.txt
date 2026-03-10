@@ -1,0 +1,387 @@
+1️⃣ Importing Axios
+An HTTP client is software that sends HTTP requests to a server and receives responses.
+In JavaScript, a Promise represents a future value that may not be available yet.
+A promise-based HTTP client means:
+A promise-based HTTP client is a library that performs asynchronous HTTP requests and returns a JavaScript Promise representing the future result of that request. The promise resolves when the server responds or rejects if the request fails. This allows developers to handle network operations cleanly using .then() or async/await, avoiding callback-based asynchronous code.
+
+When you make a request, the function returns a Promise that will resolve when the server responds.
+
+import axios from "axios";
+What is Axios?
+
+Axios is a promise-based HTTP client for JavaScript used to communicate with APIs.
+
+It runs in:
+
+Browsers
+
+Node.js
+
+It simplifies making HTTP requests like:
+
+GET
+
+POST
+
+PUT
+
+DELETE
+
+Example:
+
+axios.get("/users")
+axios.post("/login")
+Why not use fetch()?
+
+JavaScript already has fetch, but Axios provides:
+
+Feature	Axios	fetch
+Automatic JSON parsing	✅	❌
+Request interceptors	✅	❌
+Response interceptors	✅	❌
+Timeout handling	✅	❌
+Request cancellation	✅	⚠️
+Cleaner syntax	✅	❌
+
+That is why most enterprise React apps use Axios.
+
+2️⃣ Creating an Axios Instance
+const apiClient = axios.create({
+
+This creates a custom Axios instance.
+
+Instead of writing:
+
+axios.get("http://26.14.50.15:5000/api/login")
+
+You create a configured client once.
+
+Then reuse it everywhere.
+
+Example later:
+
+apiClient.get("/auth/login")
+Why this is important (FAANG concept)
+
+This is called:
+
+Service Layer Abstraction
+
+Benefits:
+
+Centralized configuration
+
+Cleaner code
+
+Easier testing
+
+Easier scaling
+
+In large apps you may have:
+
+apiClient
+authClient
+paymentClient
+analyticsClient
+
+Each talking to different services.
+
+3️⃣ Base URL Configuration
+baseURL: "http://26.14.50.15:5000/api",
+What is baseURL?
+
+It is the common prefix for all API requests.
+
+Example request:
+
+apiClient.post("/auth/login")
+
+Actual HTTP request sent:
+
+http://26.14.50.15:5000/api/auth/login
+
+So you don't repeat the domain everywhere.
+
+Why this matters in production systems
+
+In real systems you have multiple environments.
+
+Environment	API URL
+Local	http://localhost:5000
+
+Staging	https://staging-api.company.com
+
+Production	https://api.company.com
+
+Instead of editing code everywhere, you do:
+
+baseURL: process.env.REACT_APP_API_URL
+
+This is environment-based configuration.
+
+FAANG interview keyword:
+
+Environment Configuration Management
+
+4️⃣ Default Headers
+headers: {
+  "Content-Type": "application/json",
+},
+
+This sets default HTTP headers for every request.
+
+What is a header?
+
+HTTP headers provide metadata about the request.
+
+Example request:
+
+POST /auth/login
+Content-Type: application/json
+Meaning of Content-Type
+application/json
+
+Means:
+
+The body of this request contains JSON.
+
+Example body:
+
+{
+  "username": "john",
+  "password": "123"
+}
+
+Without this header, the backend might not parse JSON properly.
+
+5️⃣ Exporting the Client
+export default apiClient;
+
+Now every file in your project can use it.
+
+Example:
+
+services/authService.js
+import apiClient from "../api/apiClient";
+
+export const login = (data) => {
+  return apiClient.post("/auth/login", data);
+};
+
+Component:
+
+const res = await login({ username, password });
+6️⃣ Why This Pattern is Used in Large Systems
+
+In real production systems you add:
+
+1️⃣ Interceptors
+
+Intercept requests before sending.
+
+Example:
+
+Attach authentication token automatically.
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+Now every request sends:
+
+Authorization: Bearer jwt_token
+
+Used in OAuth / JWT systems.
+
+2️⃣ Response Interceptors
+
+Handle global errors.
+
+Example:
+
+apiClient.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response.status === 401) {
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
+Now if token expires → redirect to login.
+
+3️⃣ Timeout
+
+Prevent requests from hanging.
+
+timeout: 10000
+
+If backend doesn't respond in 10s → fail.
+
+4️⃣ Retry Logic
+
+Large systems retry failed requests.
+
+Example:
+
+Network failure → retry 3 times
+
+Libraries like:
+
+axios-retry
+7️⃣ Architecture Used in Enterprise React Apps
+
+Typical production structure:
+
+src
+ ├─ api
+ │   └─ apiClient.js
+ │
+ ├─ services
+ │   ├─ authService.js
+ │   ├─ upsService.js
+ │   └─ invoiceService.js
+ │
+ ├─ features
+ │   ├─ auth
+ │   └─ ups
+ │
+ └─ components
+
+Flow:
+
+Component
+   ↓
+Service
+   ↓
+apiClient
+   ↓
+Backend API
+
+This is called:
+
+Layered Frontend Architecture
+
+Used at companies like:
+
+Meta
+
+Google
+
+Netflix
+
+8️⃣ What Happens Internally (Deep FAANG Knowledge)
+
+When you call:
+
+apiClient.post("/auth/login")
+
+Axios does:
+
+1️⃣ Build request config
+
+method: POST
+url: http://26.14.50.15:5000/api/auth/login
+headers: {Content-Type}
+
+2️⃣ Serialize data to JSON
+
+3️⃣ Send HTTP request via browser network stack
+
+4️⃣ Receive response
+
+5️⃣ Parse JSON
+
+6️⃣ Return Promise
+
+Example:
+
+{
+  data: {...},
+  status: 200,
+  headers: {...}
+}
+9️⃣ Real Problem This Solves
+
+Without this:
+
+axios.get("http://26.14.50.15:5000/api/ups/queue")
+axios.get("http://26.14.50.15:5000/api/ups/customer")
+axios.get("http://26.14.50.15:5000/api/auth/login")
+
+Problems:
+
+URL repetition
+
+hard to change environment
+
+inconsistent headers
+
+token management messy
+
+With apiClient:
+
+apiClient.get("/ups/queue")
+apiClient.post("/ups/customer")
+apiClient.post("/auth/login")
+
+Clean and scalable.
+
+🔟 Interview-Level Summary (VERY IMPORTANT)
+
+If asked:
+
+"Why create an Axios instance?"
+
+Answer like this:
+
+Creating a custom Axios instance centralizes API configuration such as base URL, headers, interceptors, authentication tokens, and timeout handling. It improves maintainability, prevents duplication, and allows implementing cross-cutting concerns like logging, retries, and error handling across all HTTP requests. This pattern is commonly used in scalable frontend architectures.
+
+1️⃣1️⃣ Production-Level Version (What FAANG Engineers Write)
+
+Example:
+
+import axios from "axios";
+
+const apiClient = axios.create({
+  baseURL: process.env.REACT_APP_API_URL,
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+export default apiClient;
+
+✅ Now you understand:
+
+HTTP client abstraction
+
+Axios instance
+
+API service architecture
+
+Interceptors
+
+environment configuration
+
+production patterns
+
+These are exactly the patterns used in scalable React systems.

@@ -1,0 +1,461 @@
+1. What Problem This Code Solves
+
+In a React app, many components need to know:
+
+Who is logged in
+
+Whether the user is authenticated
+
+How to login
+
+How to logout
+
+Without context, you'd have to pass props through many components.
+
+Example problem:
+
+App
+ ├── Navbar
+ ├── Dashboard
+ │     ├── Profile
+ │     └── Orders
+ └── Settings
+
+All of these might need the user data.
+
+Passing props manually becomes:
+
+App -> Dashboard -> Profile -> User
+
+This is called prop drilling.
+
+React Context solves this by providing global state.
+
+2. createContext()
+import { createContext, useState } from "react";
+
+export const AuthContext = createContext();
+What this does
+
+Creates a React Context object.
+
+Think of it as a global communication channel.
+
+Internally React creates an object like:
+
+AuthContext = {
+   Provider,
+   Consumer
+}
+
+Provider sends data down the component tree.
+
+How it works internally (important for interviews)
+
+React maintains a context stack during rendering.
+
+When a component reads context:
+
+const value = useContext(AuthContext)
+
+React walks up the component tree until it finds:
+
+<AuthContext.Provider>
+
+and returns its value.
+
+Time complexity:
+
+O(tree height)
+
+But React optimizes this heavily.
+
+3. AuthProvider Component
+export function AuthProvider({ children }) {
+
+This component wraps your application.
+
+Example:
+
+<AuthProvider>
+   <App/>
+</AuthProvider>
+
+Meaning:
+
+All components inside can access authentication state.
+
+4. useState for User State
+const [user, setUser] = useState(
+  JSON.parse(localStorage.getItem("user"))
+);
+What this does
+
+Initializes the user state.
+
+Steps:
+
+1️⃣ Read user from localStorage
+2️⃣ Convert JSON string to object
+3️⃣ Store in React state
+
+Example localStorage value:
+
+"user": "{id:1,name:'Shraddha',role:'admin'}"
+
+After parsing:
+
+{
+ id:1,
+ name:"Shraddha",
+ role:"admin"
+}
+Why this is important
+
+If the user refreshes the page, React state disappears.
+
+But localStorage persists across refresh.
+
+So this line restores the login session.
+
+Without this:
+
+User logs in
+Refresh page
+User gets logged out
+5. Login Function
+const login = (userData) => {
+  localStorage.setItem("user", JSON.stringify(userData));
+  setUser(userData);
+};
+Step by step
+
+When login API succeeds:
+
+POST /auth/login
+
+Backend returns:
+
+{
+ id: 10,
+ username: "john",
+ role: "manager"
+}
+
+Then:
+
+login(response.data)
+
+Inside login:
+
+1️⃣ Save user in localStorage
+
+localStorage.setItem("user", JSON.stringify(userData))
+
+Example storage:
+
+"user": {"id":10,"username":"john","role":"manager"}
+
+2️⃣ Update React state
+
+setUser(userData)
+
+Now all components re-render.
+
+Important React concept
+
+React re-renders all consumers of the context.
+
+Example:
+
+Navbar
+Dashboard
+Profile
+
+If they use:
+
+useContext(AuthContext)
+
+They will re-render.
+
+6. Logout Function
+const logout = () => {
+  localStorage.removeItem("user");
+  setUser(null);
+};
+
+Steps:
+
+1️⃣ Remove stored session
+
+localStorage.removeItem("user")
+
+2️⃣ Update state
+
+setUser(null)
+
+Now the app knows user is logged out.
+
+Example UI behavior:
+
+if (!user) redirect("/login")
+7. Context Provider
+<AuthContext.Provider value={{ user, login, logout }}>
+
+This makes the values available globally.
+
+Available data:
+
+{
+ user,
+ login,
+ logout
+}
+
+Every child component can access it.
+
+8. Children Prop
+{children}
+
+This is everything inside AuthProvider.
+
+Example:
+
+<AuthProvider>
+   <App/>
+</AuthProvider>
+
+Here:
+
+children = <App/>
+9. Accessing Context in Components
+
+Example:
+
+import { useContext } from "react";
+import { AuthContext } from "./AuthContext";
+
+const { user, logout } = useContext(AuthContext);
+
+Now you can do:
+
+<p>{user.username}</p>
+
+<button onClick={logout}>Logout</button>
+10. Authentication Flow in Your System
+
+For your UPS system frontend, the flow will be:
+
+Login Page
+POST /auth/login
+
+Backend returns user.
+
+login(response.data)
+
+Context stores user.
+
+Protected Route
+
+Example:
+
+if (!user) navigate("/login")
+Logout
+POST /auth/logout
+logout()
+11. Data Flow Architecture
+localStorage
+      ↓
+React AuthProvider
+      ↓
+AuthContext
+      ↓
+Components
+12. Why Context Instead of Redux?
+
+For authentication:
+
+Context is enough because:
+
+small state
+
+global
+
+low update frequency
+
+Redux would be overkill.
+
+FAANG answer:
+
+Use Context for low-frequency global state
+Use Redux/Zustand for complex state
+13. Production Improvements (Important for Interviews)
+
+Your code works but real systems improve it.
+
+1️⃣ Lazy initialization
+
+Better version:
+
+const [user, setUser] = useState(() => {
+  const stored = localStorage.getItem("user");
+  return stored ? JSON.parse(stored) : null;
+});
+
+Why?
+
+Because React only reads localStorage once.
+
+2️⃣ Memoizing value
+
+Without optimization:
+
+Every render creates a new object.
+
+Better:
+
+const value = useMemo(() => ({
+  user,
+  login,
+  logout
+}), [user]);
+
+Then:
+
+<AuthContext.Provider value={value}>
+
+This prevents unnecessary re-renders.
+
+3️⃣ Token based authentication
+
+Real apps store:
+
+accessToken
+refreshToken
+
+Example:
+
+{
+ user:{id:1},
+ token:"jwt..."
+}
+4️⃣ HTTP interceptor
+
+Using axios:
+
+axios.interceptors.request.use((config)=>{
+  config.headers.Authorization = `Bearer ${token}`
+})
+
+This automatically attaches auth token.
+
+14. Security Consideration (Very Important)
+
+Storing tokens in localStorage has risks:
+
+XSS attacks
+
+Better option:
+
+httpOnly cookies
+
+Large companies prefer cookies for auth.
+
+15. React Rendering Model
+
+When setUser() runs:
+
+React does:
+
+state update
+↓
+reconciliation
+↓
+diff virtual DOM
+↓
+update components
+
+Only components using the context re-render.
+
+16. Complexity
+
+Operations:
+
+login → O(1)
+logout → O(1)
+read user → O(1)
+
+LocalStorage operations:
+
+O(1)
+17. Interview Questions They Ask
+Q1
+
+Why use Context instead of props?
+
+Answer:
+
+Avoid prop drilling and manage global state.
+Q2
+
+What happens when context value changes?
+
+Answer:
+
+All consuming components re-render.
+Q3
+
+When should you NOT use context?
+
+Answer:
+
+High frequency updates like animations or large state.
+Q4
+
+Difference between Context and Redux?
+
+Context → dependency injection
+Redux → centralized state management
+18. Real FAANG Level Architecture
+
+Production version usually looks like:
+
+auth/
+   AuthContext.js
+   useAuth.js
+   authService.js
+
+Example:
+
+authService.login()
+authService.logout()
+
+Context only manages state.
+
+19. Visual Architecture
+             AuthProvider
+                 │
+     ┌───────────┼───────────┐
+   Navbar     Dashboard     Settings
+     │             │
+     │          Profile
+     │             │
+   useContext(AuthContext)
+20. Key Concepts Interviewers Expect
+
+You should mention:
+
+React Context API
+
+Global state management
+
+localStorage persistence
+
+authentication flow
+
+React rendering lifecycle
+
+memoization
+
+security concerns
+# src/auth/authContext.jsx

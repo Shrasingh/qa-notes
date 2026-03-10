@@ -11,63 +11,35 @@ OAuth2 + streaming solves all three.
 ✅ How we use it in our application
 Flow in your system:
 Backend generates PDF in memory (Buffer)
-
 Convert Buffer → stream
-
 Upload directly to Google Drive using OAuth2
-
 Decide Drive folder based on storeCode
-
 Return PDF to user immediately
-
 Key point:
 👉 PDF never touches the server filesystem
-
 🧠 Interview one-liner
-
 “We upload PDFs to Google Drive using OAuth2 with streaming so files are securely stored without writing to disk, making the system scalable and cloud-friendly.”
-
 2️⃣ Ephemeral Caching with TTL
 ✅ What it is
-
 Ephemeral cache → temporary in-memory storage
-
 TTL (Time To Live) → data auto-expires after a fixed time
-
 In your case:
-
 Invoice data lives for ~1 hour, then disappears
-
 ✅ Why we need it
-
 Invoice data is:
-
 Needed for preview
-
 Needed for PDF generation
-
 ❌ NOT permanent business data
-
 Saving everything to DB would:
-
 increase load
-
 slow down invoice flow
-
 store unnecessary temporary data
-
 ✅ How we use it in our application
-
 Exact flow:
-
 Frontend sends invoice data → /api/invoice/save
-
 Backend stores it in cache using slug as key
-
 PDF generation fetches invoice using same slug
-
 Cache auto-cleans after TTL
-
 No DB involved for this flow.
 
 🧠 Interview one-liner
