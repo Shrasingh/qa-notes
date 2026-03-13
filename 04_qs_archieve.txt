@@ -1,12 +1,8 @@
 We use MySQL as persistent storage, but leverage JSON storage to maintain flexibility of schema and avoid rigid normalization for dynamic invoice structure.
 ✔ Durability
-
 MySQL archive
-
 ✔ Availability
-
 Cache + DB
-
 ✔ Scalability
 
 JSON schema flexible

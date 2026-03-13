@@ -32,29 +32,17 @@ Supports:
 Save Your Sale (normal invoice)
 
 QuoteSheet (QS_ prefixed invoice)
-
 Internal Invoice preview
-
 Store-based Drive folder routing
-
 This is NOT just frontend.
-
 This is:
-
 Frontend rendering system
-
 Backend API layer
-
 Cache layer
-
 PDF rendering engine
-
 External system integration (Google Drive)
-
 Conditional routing logic (store-based folders)
-
 Temporary in-memory persistence
-
 Optional MySQL persistence (transactions)
 
 That’s production-level thinking.   
