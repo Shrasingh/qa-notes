@@ -1,0 +1,415 @@
+1. MEMORY LEAK-
+  a memory leak happens when our program keeps using memory but never releases it even when its not longer needed
+  over time memory usage keeps increasing until the app becomes slow or crashes
+  for ex- we keep taking plates from the kitchen and never returning them,even if we stop eating but plate stays with usage
+  eventually the kitchen runs out of the plates:
+  so if objects are still referenced ,GC collector can not remove them - memory leak
+  normal memory lifecycle - object created,used by the program,no referenced remain,gc removes it 
+  leak situation - object created, program finished using it,references stil exists,gc cannot remove it 
+
+
+
+2. HOW MEMORY WORKS IN NODEJS
+  nodejs uses V8 engine which manages memory automatically using garbage collector
+  GC frees memory only when objects are unreachable
+   ex - let user = {name: "Shraddha"};
+     user = null;
+     now object is reachable -> GC removes it.
+     but if something still refernced it GC cannot remove it-> memory leak
+
+
+3. WHY MEMORY LEAKS MATTER IN NODEJS-:
+  node servers are long running processes.
+  ex - express api server running for months
+     if memory leaks 50MB-> 200MB-> 1GB-> crashes
+     RESULTL: FATAL ERROR: CALL_AND_RETRY_LAST ALLOCATION FAILED
+     Javascript heap out of memory
+
+
+4. HOW NODEJS MEMORY WORKS
+  node memory consists of - stack - primitive values
+                                  function calls 
+                                  let a = 10 fast and auto cleared;
+                           heap - stores - objects,arrays,closures,functions
+                           ex - let user = {name: "Shraddha"}
+                           heap memory is managed by v8 garbaje collector
+
+
+
+5. WHAT CAUSES MEMORY LEAKS IN NODE.JS 
+    1. global variables - objects stored in global scope never get garbage collected.
+    ex- bad- 
+           global.cache = []
+           function addUser(user){
+            global.cache.push(user);
+           }
+    if server receives millions of users 
+    cache - huge array 
+    memory - never released
+    fix - use limited cache or clear it or use LRU cache
+    const cache = new Map();
+    function addUser(user){
+        cache.set(user.id,user);
+    }
+
+
+   2. CLOSURES HOLDING MEMORY- closures can retain variables longer than expected.
+   we can fix this by avoiding unneccessary large variables in closures.
+
+
+   3. UNREMOVED EVENT LISTENERS
+   node use event emitter
+   if listeners are not removed -> memory grows
+   bad example - const EventEmitter = require('events');
+                 const emitter = new EventEmitter();
+                 function Handler(){
+                    console.log("event triggered");
+                 } 
+                 emitter.on("data",handler);
+                 if thousands of listeners are added -> memory leak 
+                 fix - remove listeners
+                       emitter.removeListener("data",handler);
+                       or
+                       emitter.once("data",handler);
+    4.TIMER NOT CLEARED- times hold references
+    bad example- setInterval(()=>{
+        console.log("running");
+    },1000);
+    if many intervals created -> memory grows
+    fix -
+    const time = setInterval(fn,1000);
+                 clearInterval(timer);
+    
+
+    5.IN-MEMORY CACHE THAT GROWS FOREVER
+       fix- use LRU cache 
+       libraries - lru-cache
+                   node-cache
+                   redis
+    6.LARGE OBJECTS HELD BY REFERENCES 
+      ex- let users = [];
+          app.get("/add",(req,res)=>{
+            users.push(req.body);
+          });
+        every req adds memory 
+        fix - store in db instead
+    7.DETACHED DOM LIKE OBJECTS(rare in node but possible)
+      example in SSR frameworks
+      unused objects referenced in memory
+    8.MEMORY LEAKS IN NATIVE MODULES
+      c++ addons used by node can leak memory if incorrectly implemented 
+      ex - node-gyp native modul-: node-gyp is a cross-platform command-line tool for compiling native C and C++ addon modules for Node.js. It acts as a build system generator, abstracting the complexities of different operating systems' build tools (like Make on Unix or MSBuild on Windows). 
+
+
+
+6. HOW TO DETECT MEMORY LEAKS : 
+     1.NODE INSPECTOR
+       node --inspect app.js
+       use chrome DEVTOOLS memory tab
+
+     2.HEAP SNAPSHOT
+       take snapshot and compare
+       look for -:  1. retained objects 
+                    2. growing arrays
+                    3. closures
+
+      3.heapdump library 
+        ex - require('heapdump')
+
+      4. clinic.js
+         tool: clinic doctor
+               clinic flame
+               used for performance + memory  
+      5.process.memoryUsage()
+        console.log(process.memoryUsage());
+        output- rss 
+                heapTotal
+                heapUsed
+                external
+
+
+
+7. HOW GARBAGE COLLECTION WORKS IN NODE
+  V8 uses generational GC
+  memory divided into - Young generation  - new objects created - algorithm-Scavenge GC 
+                        old generation - long lived objects 
+                                         algo- 1.mark & sweep
+                                               2.mark & compact
+                                          process- 1.mark unreachable objects
+                                                   2. remove unreachable 
+                                                   3.compact memory     
+
+
+
+8. SIGN OR MEMORY LEAK - increasing heap size
+                      frequent GC runs
+                      slow performance 
+                      out of memory crash
+                      Monitoring tools -: NewRelic
+                                          DataDog
+                                          Prometheus
+
+9. BEST PRACTICES TO AVOID MEMORY LEAKS
+    avoid global variables
+    use WeakMap/WeakSet(weak references allow GC)
+    limit cache size(use lru cache,redis)
+    remove event listeners- emitter.removeListener()
+    clear times - clearTimeout(cancels a setTimeout() ;stops a one-time delayed function)
+                  clearInterval(cancel a setInterval() ; stops a repeating function)
+    avoid large closures
+    monitor memory regularly 
+    ⏰ setTimeout + clearTimeout
+    Think of ordering food with a delay.
+    You tell the restaurant: “Bring my food after 30 minutes.”
+    But after 10 minutes you change your mind and say “Cancel the order.”
+    So the food never comes.
+    👉 That cancellation is like clearTimeout() — it cancels a one-time scheduled action.
+    Code example
+    let order = setTimeout(() => {
+     console.log("Food delivered");
+    }, 30000);
+    clearTimeout(order); // order cancelled
+     🔔 setInterval + clearInterval
+   Think of an alarm clock that rings every morning.
+   Alarm rings every day at 7 AM.
+   After a few days you turn the alarm off.
+   👉 Stopping that repeating alarm is like clearInterval() — it cancels a repeating action.
+   Code example
+   let alarm = setInterval(() => {
+   console.log("Wake up!");
+    }, 5000);
+    clearInterval(alarm); // stop the repeating alarm
+    ✅ Super short memory trick 
+   clearTimeout → cancel ONE future event (food order)
+   clearInterval → stop REPEATING events (alarm clock)
+10.QUESTIONS 
+   1.memory leak occurs when objects are no longer needed but still referenced,preventing Garbage collections
+   and causing memory usage to grow continuously.
+   2.Garbage collector removes objects only when no references exist. If references remain (globals, closures, listeners), objects stay in memory.
+   3.Common causes: Global variables, Closures, Unremoved event listeners, Unbounded caches,Timers,Large arrays,Native modules
+   4.process.memoryUsage() - Node API to check runtime memory
+                             example op - {
+                                rss:,
+                                heapTotal:,
+                                heapUsed:,
+                             }
+    5.RSS memory - resident set size = total memory allocated for the process
+    6.heap snapshot = memory dump used to analyze object references
+    7.WeakMap- holds weak references if key object is removed -> GC collects it automatically.
+    8.Your Node server memory increases every hour how would u debug
+       check process.memoryUsage()
+       take heap snapshot
+       compare snapshots
+       identify growing objects
+       trace references
+       fix code holding references                       
+       Memory leak in Node.js occurs when unused objects remain referenced and cannot be garbage collected, typically due to global variables, closures, event listeners, timers, or unbounded caches.
+       An event emitter in JavaScript is a pattern (officially implemented as a class in Node.js) that allows for the implementation of the publish/subscribe pattern. It enables objects to emit named events that cause registered function objects ("listeners" or "subscribers") to be called in response. This decouples communication between different parts of an application. 
+
+11.1️⃣ Why Closures Cause Memory Leaks Concept
+    A closure keeps a reference to variables from its outer scope even after the outer function finishes execution.
+    Because references still exist, the garbage collector cannot remove those objects.
+    Example
+       function createLogger() {
+       const largeData = new Array(1000000).fill("memory");
+       return function log() {
+        console.log("Logging...");
+       };
+     }
+    const logger = createLogger();
+    Problem
+    Even though largeData is not used anymore:
+    closure → references outer scope So largeData remains in memory.
+    Visualization
+    logger()
+      ↑
+    closure
+      ↑
+    outer function scope
+      ↑
+    largeData array
+    GC cannot remove largeData.
+    Fix - Avoid storing large objects inside closures.
+    function createLogger() {
+    return function log() {
+        console.log("Logging...");
+    };}
+   2️⃣ How V8 Garbage Collection Works
+   The V8 JavaScript Engine uses automatic garbage collection.
+   Main Idea
+   Garbage Collector removes objects that are unreachable.
+   Example
+   let user = {name:"Shraddha"};
+   user = null;
+   Now the object has no references, so GC deletes it.
+   Steps
+          1. Mark Phase
+             GC starts from root objects:global,stack variables,closures 
+             Then marks reachable objects.
+
+          2. Sweep Phase Unmarked objects are garbage → removed.
+          3. Compact Phase Memory is reorganized to remove fragmentation.
+    3️⃣ What is Generational Garbage Collection
+       V8 assumes:Most objects die young. So memory is split into two generations.
+       Young Generation-Stores new objects.
+      Algorithms:Scavenge GC
+                 Minor GC
+
+        Example:temporary variables
+                request objects
+                 short-lived data
+      Old Generation
+      Stores long-lived objects.
+      Algorithms:Mark-SweepMark-Compact
+    Example: caches, global variables, long-lived objects
+    Why This Is Fast
+     Because GC runs frequently on young objects only, improving performance.
+    4️⃣ How to Debug Memory Leak in Production
+      Step-by-step strategy
+       Step 1: Monitor memory
+                setInterval(()=>{
+                console.log(process.memoryUsage());
+               },5000);            
+        Look for increasing heapUsed.
+       Step 2: Enable inspector
+       node --inspect app.js
+       Use Chrome DevTools → Memory.
+       Step 3: Take Heap Snapshots
+      Compare: Snapshot 1 Snapshot 2
+      Find objects growing in number.
+      Step 4: Identify Retaining Path
+      Example: Array → closure → event listener
+      Step 5: Fix reference
+    Remove:global objects, listeners.timers,caches
+    Production Tools-Common tools used by large companies:
+          a- heapdump
+          b-clinic.js
+          c-NewRelic
+          d-Datadog
+          e-Prometheus
+    5️⃣ Difference Between heapUsed and heapTotal-node exposes memory metrics via:
+        process.memoryUsage()
+        heapUsed
+       Memory currently used by objects.
+     Example: 120 MB heapTotal Memory allocated to the heap by V8.
+     Example: 256 MB Visualization
+              heapTotal = total heap allocated
+              heapUsed  = actual objects stored
+
+     Example: heapTotal: 256MB
+             heapUsed : 120MB
+             Unused memory:136MB
+   6️⃣ How to Profile Memory in Node -Profiling means analyzing where memory is being used.
+       Method 1: Chrome DevTools Run: node --inspect app.js Open:chrome://inspect
+             Then take heap snapshot.
+       Method 2: Heapdump Install: npm install heapdump
+              Example: require('heapdump');
+              process.on('SIGUSR2', function(){
+                 heapdump.writeSnapshot();
+               });
+               Generates .heapsnapshot file.
+        Method 3: Clinic.js Tool:
+               clinic doctor,clinic flame,clinic heap Used by Node production teams.
+    7️⃣ Retained Size vs Shallow Size These terms appear in heap snapshot analysis.
+        Shallow Size -Memory used by the object itself.
+                Example: Object = 64 bytes 
+        Retained Size-Total memory that would be freed if the object is removed.
+        Includes: object,children,references
+        Example- Cache object→ holds array→ array holds 1000 objects
+                 Retained size = all memory of that structure.
+    8️⃣How Redis Prevents Memory Leaks in Caching Systems Instead of storing cache in application memory, companies use Redis. Why?
+        Node memory is limited.
+        Example:~1.5GB heap limit
+        Redis solves: unbounded in-memory cache Redis Eviction Policies
+         Examples:LRU (least recently used),LFU,TTL expiration
+         Example:SET user:1 "data" EX 60
+          After 60 seconds → removed automatically.
+    9️⃣ What Happens When Heap Limit is Exceeded
+       Default Node heap limit:~1.5GB (64-bit) If exceeded:
+       FATAL ERROR: CALL_AND_RETRY_LAST Allocation failed
+       JavaScript heap out of memory
+       Server crashes.Increase limit 
+       node --max-old-space-size=4096 app.js
+       Now:4GB heap
+       But this does not fix leaks, only delays crash.
+    🔟 Why Microservices Reduce Memory Leak Risk
+        In monolithic servers:one process,huge codebase,huge memory usage,Memory leaks accumulate.
+        Microservices approach,Each service runs separately.
+        Example: auth service,payment service,search service
+        Benefits:smaller processes,smaller memory,easier restart,isolation
+      If one service leaks memory → only that service restarts.
+
+
+ 7 HARDEST FAANG Memory Leak Interview Questions
+
+12.IMP
+      1. Your Node server memory increases slowly over 24 hours. How do you debug?
+      Expected Answer:monitor memory,heap snapshot,compare snapshots ,identify growing objects,trace retaining path,fix references
+      2. Why can event listeners cause memory leaks?
+         Because each listener stores references to objects.
+      3.How can closures retain memory unexpectedly?
+       Closure retains outer scope variables even when unused.
+      4.What is the difference between minor GC and major GC?
+       Minor: young generation fast
+       Major:old generation,slow
+     5.How do you monitor memory in production Node apps?
+       process.memoryUsage()
+       heapdump
+       APM tools
+     6.Why does caching often cause memory leaks?
+       Cache grows indefinitely without eviction.
+     7.What is the retaining path in heap snapshots?
+       The reference chain preventing GC.
+       Example:global → array → object
+    How Netflix and Uber Debug Node Memory Leaks
+    Large companies use structured debugging.
+    Step 1: Observability 
+            Monitoring tools:
+            Datadog
+            Prometheus
+            NewRelic
+            Detect increasing memory.
+    Step 2: Capture heap snapshot
+            Production snapshot using:heapdump
+    Step 3: Compare snapshots Look for:growing arrays listeners closures
+    Step 4: Analyze retaining paths
+    Example: EventEmitter → listener → closure → huge object
+    Step 5: Deploy fix
+    Common fixes:remove listeners,limit cache,avoid globals
+    A Node server crashes after running for several hours.
+    Code: 
+    const express = require("express");
+    const app = express();
+    let requests = [];
+    app.get("/", (req,res)=>{
+    requests.push({
+        url: req.url,
+        time: Date.now()
+    });
+    res.send("ok");
+    });
+    app.listen(3000);
+
+   Question- Why does this cause memory leak?
+   Answer-The requests array grows forever.
+          Every request adds new object.Memory increases continuously.
+          FixL: Limit size:
+          if(requests.length > 1000){
+          requests.shift();
+          }
+          Or use Redis.
+
+
+
+    Memory leaks in Node.js happen when objects remain referenced and cannot be garbage collected by the V8 JavaScript Engine.
+    Common causes: global variables,closures,event listeners,timers,
+    ,unbounded caches,large arrays,
+    Detection methods: heap snapshot,memory profiling,APM monitoring
+    Fix strategies: remove references ,limit cache, use Redis,monitor memory
+
+
+
+Key Concepts
+Emitter: The object that triggers or publishes an event.
+Event: A named action or occurrence within the system, typically a string.
+Listener/Handler: A callback function that is executed when a specific event is emitted

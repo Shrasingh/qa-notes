@@ -1245,11 +1245,7 @@ I/O callbacks
 setImmediate
 ↓
 close events
-
 If you'd like, I can also show:
-
 Top 15 FAANG Node.js event loop tricky questions
-
 One insanely tricky event loop question that 90% of developers fail
-
 Visual diagram of Node.js event loop (very useful for interviews).

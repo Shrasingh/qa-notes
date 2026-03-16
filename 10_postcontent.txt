@@ -25,3 +25,22 @@ Where have you seen subtle data-shape mismatches create failures in otherwise co
 #StateManagement
 #React
 #SystemDesign
+A UI showing different data for the same invoice is rarely a UI problem.
+
+During debugging an invoice preview system built with React/Redux, two components rendered different data for the same invoice.
+
+The issue turned out not to be rendering logic but **state-layer schema inconsistency**.
+
+Returned items and newly added items had slightly different **data shapes**, and a shallow merge was overwriting nested fields like `vendorId` and `price`.
+
+The fix was architectural rather than patching UI components:
+
+• define a strict item schema
+• normalize incoming items before writing to Redux
+• expose state through a selector layer
+
+After enforcing normalization, both views derived identical data and state updates became deterministic.
+
+**Engineering takeaway:**
+When multiple views disagree, the root cause is often in the **data model rather than the UI layer**.
+
