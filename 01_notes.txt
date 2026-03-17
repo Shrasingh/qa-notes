@@ -55,7 +55,6 @@ This is your strongest design point 💪
 ✅ What it is
 
 A backend pipeline that:
-
 loads a frontend route
 
 renders it fully
@@ -136,15 +135,11 @@ OAuth2 Streaming upload to Google Drive
         ↓
 PDF returned to user
 
-🎯 Final 60-Second FAANG Explanation (MEMORIZE THIS)
+Final 60-Second FAANG Explanation (MEMORIZE THIS)
 
 “Invoice data is stored temporarily using an in-memory cache with TTL since it’s only needed for preview and PDF generation.
 The backend uses Puppeteer to render the actual frontend invoice page into a pixel-perfect PDF, avoiding duplicate templates.
 The generated PDF is uploaded securely to Google Drive using OAuth2 streaming, without writing files to disk, and returned immediately to the user.”
-
-
-
-
 post content - Most bugs don’t show up in code reviews.
 They show up later—as lost revenue in production.
 
@@ -158,11 +153,8 @@ But underneath, the system was quietly failing. Sales teams were selecting incor
 That experience reshaped how I think about engineering.
 
 I stopped optimizing only for visible features and started optimizing for correctness, guardrails, and failure safety—the parts that matter when software meets real users and real constraints.
-
 Here’s what changed:
-
 I reworked the invoice flow into a production-grade full-stack system, treating validation and automation as core design requirements rather than afterthoughts.
-
 Key technical decisions included:
 
 Enforcing inventory and SKU validation through REST APIs to prevent invalid sales at the source
