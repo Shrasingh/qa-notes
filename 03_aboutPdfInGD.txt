@@ -2280,146 +2280,38 @@ Twice.You must:
                          3️⃣ Token Bucket (Best for interviews)-Bucket has 100 tokens.
                              Each request consumes 1 token.Tokens refill gradually. If bucket empty → reject request.
 
-Uber uses token bucket style mechanisms internally.
-
-🎯 In Your System
-
-Google Drive has rate limits.
-
-If you upload too many PDFs:
-
-You get 429 error.
-
-Correct handling:
-
-Exponential backoff
-
-Retry with jitter
-
-Queue uploads
-
-❓ Interview Question
+      Uber uses token bucket style mechanisms internally.
+      Google Drive has rate limits.If you upload too many PDFs:You get 429 error.
+      Correct handling:Exponential backoff Retry with jitter Queue uploads
 
 Why not just retry immediately?
-
-Because:
-
-You amplify the overload
-
-You create cascading failures
-
-That’s called retry storm.
-
-⚙️ 4️⃣ Concurrency
-
-This is where many SDE-1 candidates struggle.
-
-🏪 Story
+    Because:You amplify the overload You create cascading failures That’s called retry storm.
+4️⃣ Concurrency
 
 Two employees try to reduce inventory at same time.
+      Inventory = 1 Both see 1.Both subtract 1.Now inventory = -1.That is concurrency problem.
+      What Concurrency Is Concurrency is when:Multiple operations execute at overlapping times.In Node.js: Single-threaded event loop
+      But I/O is concurrent In database: Multiple transactions run simultaneously
+      Types of Concurrency Problems 1️⃣ Race Condition-Two operations depend on shared state.
+                                        Example:Reducing inventory without locking.
+                                    2️⃣ Lost Update -Transaction A writes.Transaction B overwrites.A’s changes lost.
+                                    3️⃣ Dirty ReadReading uncommitted data.
 
-Inventory = 1
+                         Solutions -1️⃣ Database Transactions Use:SELECT ... FOR UPDATE
+                                        Locks row.
+                                    2️⃣ Optimistic Locking
+                                        Use version column.
+                                        If version changed → retry.
+                                    3️⃣ Atomic Updates Instead of: read inventory subtract write
+                                         Use:UPDATE products SET stock = stock - 1 WHERE stock > 0 Single atomic operation.
 
-Both see 1.
-Both subtract 1.
-Now inventory = -1.
-
-That is concurrency problem.
-
-🧠 What Concurrency Is
-
-Concurrency is when:
-
-Multiple operations execute at overlapping times.
-
-In Node.js:
-
-Single-threaded event loop
-
-But I/O is concurrent
-
-In database:
-
-Multiple transactions run simultaneously
-
-🔥 Types of Concurrency Problems
-1️⃣ Race Condition
-
-Two operations depend on shared state.
-
-Example:
-Reducing inventory without locking.
-
-2️⃣ Lost Update
-
-Transaction A writes.
-Transaction B overwrites.
-A’s changes lost.
-
-3️⃣ Dirty Read
-
-Reading uncommitted data.
-
-🛠 Solutions
-1️⃣ Database Transactions
-
-Use:
-
-SELECT ... FOR UPDATE
-
-Locks row.
-
-2️⃣ Optimistic Locking
-
-Use version column.
-If version changed → retry.
-
-3️⃣ Atomic Updates
-
-Instead of:
-
-read inventory
-subtract
-write
-
-Use:
-
-UPDATE products
-SET stock = stock - 1
-WHERE stock > 0
-
-Single atomic operation.
-
-🎯 Interview Question
-❓ Node.js is single-threaded. Why do we still care about concurrency?
-
-Because:
-
-Multiple requests handled asynchronously
-
-Database operations happen in parallel
-
-Distributed systems always concurrent
-
-Event loop doesn’t remove concurrency issues.
-
-🧠 How These Concepts Connect Together
-
-Let’s combine everything:
-
-User clicks Save.
-
-Backend must:
-
-Authenticate with Google (OAuth2)
-
-Ensure request not duplicated (Idempotency)
-
-Control how many PDFs generated (Rate limiting)
-
-Prevent inventory corruption (Concurrency control)
-
-All these concepts work together.
+Node.js is single-threaded. Why do we still care about concurrency?
+     Because: Multiple requests handled asynchronously
+              Database operations happen in parallel
+              Distributed systems always concurrent
+              Event loop doesn’t remove concurrency issues.
+             Let’s combine everything User clicks Save.Backend must:Authenticate with Google (OAuth2) Ensure request not duplicated (Idempotency) Control how many PDFs generated (Rate limiting)
+             Prevent inventory corruption (Concurrency control)All these concepts work together.
 
 🎯 What FAANG Is Testing
 
