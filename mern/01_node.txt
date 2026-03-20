@@ -1,3 +1,24 @@
+          CHEF - WORKER THREAD (libuv)
+          WAITER - Eventloop(main thread)
+          ORDER QUEUE - Callback QUEUE
+          CUSTOMERS - INCOMING Request  
+          quick task handled immediately
+          water & bill = fast 
+          waiter does instantly
+          slow task delegated
+          cooking pasta = time consuming
+          water sends it to check (worker thread)
+          waiter keeps working - while pasta is cooking serves other customers takens new orders
+          chef finishes - notifies waiter  pasta is ready
+          waiter servers result delivers pasta to customers
+          the waiter = event loop 
+          it keeps checking  - is any task done?if yes execute callback if no -> keep taking new requests
+          Two queue-microtask(promise,process.nextTick),macrotask Queue(setTimeout,setImmediate)
+          VIP CUSTOMERS- microtask queue
+          NORMAL CUSTOMERS - macrotask
+          Node.js uses a single-threaded event loop that continuously checks the call stack and callback queues, executing synchronous code first, then microtasks, and then macrotasks, while delegating heavy operations to worker threads via libuv.
+
+
 1.Node.js is a JavaScript runtime built on Chrome’s V8 engine that allows JavaScript to run on the server side.
 It uses
 Event-driven architecture
