@@ -12,25 +12,15 @@ Backend:
    3. Convert to PDF buffer
    4. Upload PDF to Google Drive
    5. Return PDF to browser
-
 A full-stack invoice system that:
-
 Takes invoice form data (React)
-
 Saves invoice temporarily in backend cache
-
 Uses Puppeteer to render the React page
-
 Generates PDF
-
 Uploads it to Google Drive
-
 Returns PDF to browser
-
 Supports:
-
 Save Your Sale (normal invoice)
-
 QuoteSheet (QS_ prefixed invoice)
 Internal Invoice preview
 Store-based Drive folder routing
@@ -2475,84 +2465,35 @@ Weak Answer:
 That’s incorrect.
 
 ❓ 2. What is the difference between parallelism and concurrency?
-Why they ask:
-
-To check system fundamentals.
-
-Strong Answer:
-
-Concurrency = multiple tasks in progress at overlapping times.
-
-Parallelism = tasks executing at the same time on multiple CPUs.
-
-Node.js handles concurrency well, but Puppeteer can introduce parallelism issues due to multiple Chrome processes.
-
+       Concurrency = multiple tasks in progress at overlapping times.
+       Parallelism = tasks executing at the same time on multiple CPUs.
+       Node.js handles concurrency well, but Puppeteer can introduce parallelism issues due to multiple Chrome processes.
 ❓ 3. How would you handle memory leaks in Puppeteer?
-Strong Answer:
-
-Always close browser instances in finally block
-
-Use browser pool instead of launching repeatedly
-
-Monitor memory using process metrics
-
-Use container limits
-
-Restart workers periodically
-
-🗃 SECTION 2 — Database & Consistency Questions
-❓ 4. What happens if two invoices are generated at the exact same millisecond?
-Why they ask:
-
-ID collision scenario.
-
-Strong Answer:
-
-If slug uses timestamp only, collision is possible.
-Better solution:
-
-Use UUID (v4 or v7)
-
-Or database auto-increment ID
-
-Or combination of timestamp + random entropy
-
+           Always close browser instances in finally block
+           Use browser pool instead of launching repeatedly
+           Monitor memory using process metrics
+           Use container limits
+           Restart workers periodically
+❓ 4. What happens if two invoices are generated at the exact same millisecond?ID collision scenario.
+           If slug uses timestamp only, collision is possible.
+           Use UUID (v4 or v7)
+           Or database auto-increment ID
+           Or combination of timestamp + random entropy
 ❓ 5. How do you ensure consistency between PDF upload and database state?
-Strong Answer:
-
-Use a state machine:
-
-Invoice created → status = PENDING
-
-PDF generated → status = GENERATED
-
-Drive upload successful → status = UPLOADED
-
-If upload fails → retry worker checks status.
-
-Never assume success without storing state.
-
-❓ 6. What is eventual consistency?
-Strong Answer:
-
-Eventual consistency means that after some time, all replicas converge to the same state, but temporary inconsistencies may exist.
-
-Example:
-PDF uploaded in background — status update may be slightly delayed.
-
-🌍 SECTION 3 — Scalability & Architecture Questions
-❓ 7. How would you make this system horizontally scalable?
-Strong Answer:
-
-Stateless API servers
-
-Redis instead of in-memory cache
-
-Queue-based PDF generation
-
-Object storage instead of local disk
-
-Load balancer in front
+           Use a state machine:Invoice created → status = PENDING
+           PDF generated → status = GENERATED
+           Drive upload successful → status = UPLOADED
+           If upload fails → retry worker checks status.
+          Never assume success without storing state.
+❓ 6.What is eventual consistency?
+         Eventual consistency means that after some time, all replicas converge to the same state, but temporary inconsistencies may exist.
+         Example:PDF uploaded in background — status update may be slightly delayed.
+❓ 7.How would you make this system horizontally scalable?
+          Stateless API servers
+          Redis instead of in-memory cache
+          Queue-based PDF generation
+          Object storage instead of local disk
+          Load balancer in front
 
 ❓ 8. What is backpressure and how would you handle it?
 Strong Answer:

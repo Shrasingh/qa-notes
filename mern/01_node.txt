@@ -5,42 +5,22 @@ Non-blocking I/O
 Single-threaded event loop
 This makes it highly scalable for I/O-heavy applications.
 Real World Example
-
 Think of a restaurant with one waiter.
-
 Traditional servers (Java, PHP old models)
-
 1 waiter handles 1 table at a time.
-
 Node.js
-
 1 waiter takes orders from many tables
-
 kitchen prepares food asynchronously
-
 waiter delivers when ready
-
 So Node handles thousands of requests efficiently.
 Where Node.js is used in FAANG-level systems
-
-Examples:
-
-Netflix → streaming backend
-
-LinkedIn → mobile backend
-
-Uber → real-time ride matching
-
-PayPal → payment APIs
+    Examples:Netflix → streaming backend LinkedIn → mobile backend Uber → real-time ride matching PayPal → payment APIs
 Why Node.js is good for scalable systems?
-
-Answer:
-
-Non-blocking I/O :
+    Non-blocking I/O :
     Node.js is non-blocking I/O because it uses an event-driven architecture with a single-threaded event loop.
-Event-driven architecture : 
+     Event-driven architecture : 
     Node.js uses an event-driven architecture to handle many I/O operations efficiently without blocking the main thread.
-Lightweight:
+    Lightweight:
     Single-threaded architecture
 Node.js uses one main thread instead of creating many threads, which reduces memory usage.
 
@@ -52,23 +32,17 @@ Uses an event loop to handle multiple requests efficiently.
 
 Efficient memory usage
 Because it avoids multiple threads, it consumes less RAM.
-
 Fast execution with V8 engine
 Node.js runs on the Google Chrome V8 engine, which compiles JavaScript into fast machine code.
-
 Minimal overhead
 Handles many connections with fewer system resources compared to traditional servers.
 In one line:
 Node.js is lightweight because it uses a single-threaded, event-driven, non-blocking architecture that uses fewer system resources.
 Handles many concurrent connections
 2. Node.js Architecture (VERY IMPORTANT)
-
 Node.js follows:
-
 Single Thread + Event Loop + Non-blocking I/O
-
 Architecture components:
-
 Client Request
       ↓
 Event Queue
@@ -81,68 +55,41 @@ Callback Queue
       ↓
 Response
 Real Interview Example
-
 Imagine 1000 users hitting an API
-
 Traditional server
-
 1000 users → 1000 threads
 High memory usage
-
 Node.js
-
 1000 users → 1 event loop
 async operations handled by worker threads
 Code Example
 const fs = require("fs");
-
 console.log("Start");
-
 fs.readFile("data.txt", "utf8", (err, data) => {
   console.log(data);
 });
-
 console.log("End");
-
 Output
-
 Start
 End
 file content
-
 Why?
-
 Because file reading is asynchronous.
-
 FAANG Interview Question
-
 Why Node.js is single threaded but still scalable?
-
 Answer:
-
 Because heavy operations are delegated to libuv thread pool, while the event loop manages callbacks asynchronously.
-nodejs prefers non blocking i/o to avoid to avoid thread blocking and allow handling multple concurrent requests.
+nodejs prefers non blocking i/o to avoid thread blocking and allow handling multple concurrent requests.
 nodejs module: 
       core module ex fs,os 
       local module ex utils
       third party module ex mongoose
-diff bw requir & import 
+diff bw requir & import  
      require - sync,common js
      import - es modules ,async
 npm (Node Package Manager)
-npm is used for
-
-installing packages
-
-dependency management
-
-scripts
-
-Example
-
-npm install express
-
-package.json imp fields : 
+npm is used for installing packages dependency management scripts
+  Example npm install express package.json imp fields : 
      name
      version
      scripts
@@ -162,22 +109,17 @@ Callback Example
 fs.readFile("file.txt", (err,data)=>{
 console.log(data)
 })
-
 Problem
-
 callback hell
 Promise Example
 readFile()
 .then(data=>console.log(data))
 .catch(err=>console.log(err))
 Async Await
-
 Modern approach.
-
 async function read() {
-  const data = await readFile()
+  cons data = await readFile()
 }
-
 7. Event Loop (FAANG Favorite)
     Event loop manages async operations.
     Phases
@@ -204,9 +146,7 @@ Explain difference between
     Important order:
     nextTick > Promise > setTimeout
 In Node.js, the Event Loop processes asynchronous operations in several phases. One of the most important phases is the Timer phase.
-
 Let’s break the Timer phase in detail: what it is, why it exists, how it works internally, and its components.
-
 1️⃣ What is the Timer Phase?
 
 The Timer phase is the first phase of the Node.js event loop.
@@ -220,63 +160,39 @@ setInterval()
 These functions schedule a callback after a specified delay.
 
 Example:
-
 setTimeout(() => {
   console.log("Hello after 2 seconds");
 }, 2000);
-
 This does NOT guarantee exact execution after 2000ms.
 Instead it means:
-
 "Execute the callback after at least 2000ms when the event loop reaches the timer phase."
 
 2️⃣ Why the Timer Phase Exists
 
 JavaScript in Node.js is single-threaded, but Node.js needs to handle many asynchronous operations like:
-
 HTTP requests
-
 File system operations
-
 Database queries
-
-Delayed tasks
-
+Delayed task
 The Timer phase allows scheduling tasks for future execution without blocking the main thread.
-
 Without timers:
-
 You would need blocking delays
-
 The server would freeze
-
 Concurrency would collapse
-
 Timers allow non-blocking delays.
-
 Example bad design (blocking):
-
 sleep(2000)
 console.log("done")
-
 Example Node.js design:
-
 setTimeout(() => {
   console.log("done")
 }, 2000)
-
 Node.js continues doing other work while waiting.
-
 3️⃣ How the Timer Phase Works Internally
-
 Internally Node.js uses libuv.
-
 libuv implements the event loop and timers system.
-
 Internal Timer Process
-
 1️⃣ User schedules a timer
-
 setTimeout(callback, delay)
 
 2️⃣ Node registers the timer in libuv timer queue
@@ -290,7 +206,6 @@ delay time
 start time
 
 4️⃣ When the event loop reaches the Timer phase:
-
 Node checks:
 
 Has the timer delay expired?
@@ -328,11 +243,8 @@ Timers are executed when their time has passed.
 2️⃣ Expired Timer Detection
 
 Node compares:
-
 current_time >= timer_expiration_time
-
 Example:
-
 Timer: 1000ms
 Current: 1100ms
 
@@ -390,33 +302,20 @@ Time = 400ms
 No timers expired.
 
 Nothing executes.
-
 Loop 2
-
 Time = 600ms
-
 B expired
-
 Execution:
-
 B
-Loop 3
-
+Loop 
 Time = 1100ms
-
 A expired
-
 Execution:
-
 A
 Loop 4
-
 Time = 1600ms
-
 C expired
-
 Execution:
-
 C
 6️⃣ Important Rule: Delay is Minimum, Not Exact
 
@@ -467,16 +366,12 @@ Poll
 Check
 ↓
 Close
-
 Timers always run first in each loop iteration.
-
 8️⃣ Example Demonstrating Timer Phase Behavior
 const fs = require("fs");
-
 setTimeout(() => {
   console.log("timeout");
 }, 0);
-
 setImmediate(() => {
   console.log("immediate");
 });
@@ -589,33 +484,20 @@ Possible output:
 timeout
 immediate
 Why?
-
 Code executes in main thread
-
 Both timer and immediate registered
-
 Event loop starts
-
 First phase → Timers
-
 Timer already expired (0 ms)
-
 timeout executes
-
 Later → Check phase
-
 immediate executes
-
 So:
-
 timeout
 immediate
 Case 2 — Inside an I/O Callback
-
 Example:
-
 const fs = require("fs");
-
 fs.readFile(__filename, () => {
   setTimeout(() => console.log("timeout"), 0);
   setImmediate(() => console.log("immediate"));
@@ -728,15 +610,11 @@ Insertion: O(log n)
 Peek: O(1)
 Removal: O(log n)
 Timer Execution Flow
-
 Each event loop iteration:
-
 current_time = now()
-
 while (heap_root.expiration <= current_time)
     execute callback
     remove timer
-
 This ensures only expired timers execute.
 
 setInterval Internals
@@ -756,11 +634,8 @@ reinsert timer into heap
 So intervals are just repeating timers.
 
 3️⃣ Full Deep Dive: Node.js Event Loop (Interview Level)
-
 The event loop allows Node.js to handle thousands of concurrent operations with a single thread.
-
 Core idea:
-
 while(true)
    process event loop phases
 Event Loop Architecture
@@ -792,47 +667,28 @@ Event Loop Architecture
       │    Close    │
       └─────────────┘
 Phase 1 — Timers
-
 Executes callbacks for:
-
 setTimeout()
 setInterval()
-
 Condition:
-
 current_time >= timer_expiration
-
 Example:
-
 setTimeout(() => console.log("timer"), 100);
 Phase 2 — Pending Callbacks
-
 Handles some system-level callbacks.
-
 Examples:
-
 TCP errors
 DNS callbacks
 some OS operations
-
 Rarely discussed in interviews.
-
 Phase 3 — Idle / Prepare
-
 Internal phase used by libuv.
-
 Purpose:
-
 prepare for poll phase
-
 Not exposed to developers.
-
 Phase 4 — Poll Phase (Most Important)
-
 This is the heart of the event loop.
-
 Poll phase handles:
-
 network I/O
 file system callbacks
 database responses
@@ -851,7 +707,6 @@ event loop executes callback
 Poll Phase Behavior
 
 Poll does two things:
-
 1️⃣ Execute I/O callbacks
 execute queued I/O callbacks
 2️⃣ Wait for new events
@@ -892,27 +747,19 @@ socket.on("close", () => {
    console.log("socket closed");
 });
 Microtasks (Important FAANG Detail)
-
 Microtasks are not a phase but run between phases.
-
 Types:
-
 process.nextTick()
 Promise callbacks
 queueMicrotask()
-
 Priority:
-
 1. process.nextTick
 2. Promises
 3. Event loop phases
 Microtask Example
 setTimeout(() => console.log("timer"), 0);
-
 Promise.resolve().then(() => console.log("promise"));
-
 Output:
-
 promise
 timer
 
@@ -1099,12 +946,9 @@ process.nextTick keeps filling the nextTick queue, blocking the event loop.
 7. Async/Await with Promise
 async function test() {
   console.log("1");
-
   await Promise.resolve();
-
   console.log("2");
 }
-
 console.log("3");
 
 test();
@@ -1115,26 +959,19 @@ Output
 1
 4
 2
-
 Why?
-
 await moves execution to the microtask queue.
-
 8. Multiple Timers
 setTimeout(() => console.log("A"), 0);
 setTimeout(() => console.log("B"), 0);
-
 Promise.resolve().then(() => console.log("C"));
 Output
 C
 A
 B
-
 Microtasks execute before timers.
-
 9. setImmediate inside I/O
 const fs = require("fs");
-
 fs.readFile(__filename, () => {
   setTimeout(() => console.log("Timeout"), 0);
   setImmediate(() => console.log("Immediate"));
@@ -1142,12 +979,9 @@ fs.readFile(__filename, () => {
 Output
 Immediate
 Timeout
-
 Inside I/O callbacks, setImmediate always runs before setTimeout.
-
 10. Complex Event Loop Example
 console.log("Start");
-
 setTimeout(() => console.log("Timeout"), 0);
 
 setImmediate(() => console.log("Immediate"));
@@ -1208,7 +1042,7 @@ Example
 const http = require("http");
 
 http.createServer((req, res) => {
-  setTimeout(() => {
+  setTimeout(() => {;
     res.end("Hello");
   }, 1000);
 }).listen(3000);

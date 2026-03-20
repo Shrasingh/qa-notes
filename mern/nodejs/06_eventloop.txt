@@ -1,0 +1,129 @@
+11. Event Loop = mechanism that allows Node.js (single-threaded) to handle multiple operations asynchronously
+    Node js is - single threaded(only one stack) but needs to handle APIs,DB calls,file system, timers,
+     if everything was synchronous server would block so  node uses- call stack(main thread),web apis(background),event loop(scheduler)
+
+
+2. How Event Loop Works (Core Idea) 
+      Think of it like a manager:Run sync code (stack) 
+      Offload async tasks to background (libuv)
+      When done → put callbacks into queues
+      Event loop picks and executes them   
+
+
+3.  Internal Components
+       🔹 1. Call Stack Executes synchronous code
+       2. libuv (C++ layer) Handles: File I/O Networking Thread pool
+       3. Queues Different queues: Microtask queue, Timer queue, I/O queue, Check queue 
+
+
+4.  Event loop phases - node event loop runs in phases:
+       1. Timers
+       2. Pending callbacks (I/O)
+       3. Idle/prepare
+       4. Poll (I/O)
+       5. Check (setImmediate)
+       6. Close callbacks    
+       order - SYNC
+                 ↓
+               process.nextTick - executed before everything else even before promises Special queue: nextTick queue
+                 ↓
+               Promise microtasks - runs after nextTick part of microtask queue :   AFTER EVERY PHASE: NODE RUNS NEXTTICK QUEUE MICROTASK QUEUE  
+                 ↓
+               Timers (setTimeout) - runs in timers phase 
+                 ↓
+               I/O callbacks - runs in poll phase
+                 ↓
+               setImmediate - runs in check phase
+                 ↓
+               close events - 
+        *setTimeout- time phase
+        *setImmediate - check phase
+        it depends on context which(setImmediate,setTimeout) runs first - inside I/O setImmediate runs first,outside not guaranteed
+5.  Diff bw nextTick vs setImmediate - nextTick(nextTick Special queue,highest Priority ,starvation risk)
+               setImmediate(check phase,lower Priority,no starvation risk)
+
+6.  Node uses 1 main thread ,libuv thread pool(4 by default)
+7.  Eventloop(manager), Queues(waiting rooms), Priority-nextTick VIP <- Promise VIP <- Timers <- IO <- Immediate
+8.  "Node.js event loop is a single-threaded mechanism that manages asynchronous operations by offloading tasks to libuv and executing callbacks in prioritized phases using queues like microtasks and macrotasks.
+
+
+
+9.   Starvation - function loop(){
+                     process.nextTick(loop);
+                   }
+                   loop();
+        event loop gets blocked(starvation)
+        nextTick keeps adding itself,Event loop never reaches timers or I/o
+        Recursive process.nextTick causes starvation because it blocks the event loop from moving to other phases        
+
+
+10.  Node.js event loop executes synchronous code first, then processes microtasks like Promises and nextTick, and then executes macrotasks across phases like timers, poll, and check. process.nextTick has the highest priority and can cause starvation if abused.
+
+
+11.  imp - console.log("start");
+           setTimeout(() => {
+             console.log("timeout1");
+              Promise.resolve().then(() => console.log("promise1"));
+              }, 0);
+              Promise.resolve().then(() => {
+              console.log("promise2");
+              setTimeout(() => console.log("timeout2"), 0);
+            });
+            console.log("end");
+            output - start end promise2 timeout1 promise1 timeout2
+            * sync - start end
+            * microtask - promise2
+            * then macrotask - timeout1
+            *inside timeout -> microtask ->promise1
+            * then next macrotask -> timeout2
+
+
+
+
+
+            nextTick Starvation pattern
+            process.nextTick(() => console.log("A"));
+            process.nextTick(() => {
+            console.log("B");
+            process.nextTick(() => console.log("C"));
+            });
+            Promise.resolve().then(() => console.log("D"));
+            console.log("E");
+            Output- E A B C D
+            sync - E, nextTick queue runs fully -> A,B,C then promise D 
+            Node drains the entire nextTick queue before moving to promises 
+
+
+            Promise.resolve().then(() => {
+            console.log("promise");
+            setImmediate(() => console.log("immediate"));
+            });
+            setTimeout(() => console.log("timeout"), 0);
+
+            output- promise timeout immediate
+            *microtask -> promise timers phase->timeout check phase -> immediate
+            
+            const fs = require("fs");
+            fs.readFile(__filename, () => {
+                console.log("I/O");
+                process.nextTick(() => console.log("nextTick"));
+                Promise.resolve().then(() => console.log("promise"));
+                setImmediate(() => console.log("immediate"));
+            });
+            Output- I/O nextTick promise immediate
+            *inside i/o callback nextTick promise check phase
+            after every phase node processes nexttick and micro before continuing 
+            
+            async function test() {
+               console.log("1");
+               await Promise.resolve();
+               console.log("2");
+            }
+            console.log("3");
+            test();
+            console.log("4");
+            output 3 1 4 2
+            sync 3 <- function starts 1 <- await pauses moves rest to microtask sync continue 4 <- microtask 2
+            * await is syntactic sugar over promise and schedules continuation as a microtask 
+
+
