@@ -10,15 +10,13 @@
           water sends it to check (worker thread)
           waiter keeps working - while pasta is cooking serves other customers takens new orders
           chef finishes - notifies waiter  pasta is ready
-          waiter servers result delivers pasta to customers
+          waiter serves result delivers pasta to customers
           the waiter = event loop 
           it keeps checking  - is any task done?if yes execute callback if no -> keep taking new requests
           Two queue-microtask(promise,process.nextTick),macrotask Queue(setTimeout,setImmediate)
           VIP CUSTOMERS- microtask queue
           NORMAL CUSTOMERS - macrotask
           Node.js uses a single-threaded event loop that continuously checks the call stack and callback queues, executing synchronous code first, then microtasks, and then macrotasks, while delegating heavy operations to worker threads via libuv.
-
-
 1.Node.js is a JavaScript runtime built on Chrome’s V8 engine that allows JavaScript to run on the server side.
 It uses
 Event-driven architecture
@@ -124,8 +122,7 @@ async programming
     A callback is a function passed as an argument to another function and executed after an asynchronous task finishes.
     2. Promises
     A promise is an object that represents the future result of an asynchronous operation, which can be resolved (success) or rejected (error).
-3. Async/Await
-Async/Await is a modern syntax that allows writing asynchronous code in a synchronous-looking way, making it easier to read and manage promises.   
+    3. Async/Await - Async/Await is a modern syntax that allows writing asynchronous code in a synchronous-looking way, making it easier to read and manage promises.   
 Callback Example
 fs.readFile("file.txt", (err,data)=>{
 console.log(data)
@@ -145,11 +142,20 @@ async function read() {
     Event loop manages async operations.
     Phases
     timers
-    pending callbacks
+    pending callbacks-It executes callbacks that were deferred (postponed) from previous I/O operations,Some system-level callbacks couldn’t run earlier → they are executed here it does ONLY certain system-level callbacks
     idle
-    poll
-    check
+    poll-POLL phase is where Node.js actually waits for and executes I/O operations POLL = "Wait for work + execute work"
+    check-CHECK phase executes callbacks scheduled by setImmediate(),check exist Because Node.js needed a way to:
+    “Run something immediately AFTER I/O is done”
+    POLL PHASE:
+      ├── Has I/O? → execute callbacks
+      ├── No I/O?
+      │     ├── timers exist → wait until timer
+      │     └── no timers → wait forever
+      └── Then → move to CHECK phase
     close callbacks
+    Poll phase is responsible for executing I/O callbacks and deciding whether the event loop should block waiting for new I/O or proceed to the next phase based on timers and pending tasks.
+    POLL = Process + Observe + Listen + Loop
     Example
        setTimeout(()=>console.log("timeout"),0)
        Promise.resolve().then(()=>console.log("promise"))
@@ -375,7 +381,6 @@ Check	setImmediate
 Close callbacks	cleanup
 
 Flow:
-
 Timers
 ↓
 Pending callbacks
@@ -611,10 +616,8 @@ When this runs:
 
 setTimeout(callback, 1000);
 
-Process:
-
-JavaScript API
-↓
+Process: JavaScript API
+            ↓
 Node timers module
 ↓
 libuv timer registration

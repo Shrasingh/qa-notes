@@ -127,3 +127,72 @@
             * await is syntactic sugar over promise and schedules continuation as a microtask 
 
 
+
+
+
+
+12- timers - phase is where node.js executed callbacks of funtions like setInterval setTimeout
+             it checks which timers have completed their minimum delay then executes their callbacks.
+             setTimeout(fn, 0) does NOT mean immediate execution
+              It means:“Run this after at least 0ms, when event loop reaches timers phase
+              1. setTimeout(()=>{
+                console.log("Hellow");
+              },1000);
+              2.nodejs :  register this timer 
+                        send it to libuv(c++layer)
+              3.after 1000ms passes,callbacks to call stack 
+              4.when event loop enters timers phase: it check all ready timers
+                                                     pushes their callbacks to call stack 
+               👉 Think of it like a kitchen timer ⏲️
+               You set timer: “Cook after 10 minutes”
+               Chef DOESN’T keep watching it continuously
+               After 10 minutes → bell rings 🔔
+               Chef processes it when free
+               👉 Same in Node.js:
+               Timer finishes → waits for event loop turn
+               setTimeout(()=>{
+                console.log("Hi");
+               },1000); it means run after 1000ms but only when event loop is free 
+               setTimeout(() => console.log("Timer"), 0);
+               while(true) {} output nothing prints - event loop is blocked never reaches timers phase
+               Timers phase executes callbacks of setTimeout and setInterval after their minimum delay has passed. However, execution depends on event loop availability, so delays are not guaranteed to be exact.
+13- idle -phase is an internal phase used by nodejs/libub for housekeeping tasks. it is not directly accessible to developers and does not execute user callback
+          Idle phase is an internal phase in Node.js event loop used by libuv for housekeeping and preparation tasks. It does not execute any user-defined callbacks
+          it is part of "idle prepare" phases in libuv before entering poll phase to decide how lomg to block wait 
+          it’s internal, not relevant to user code.
+14.pending - The pending callbacks phase executes callbacks of certain system-level operations that were deferred from the previous loop iteration.
+             It runs callbacks for some I/O operations that:
+             were completed earlier but not executed immediately and are now waiting to be processed
+             not all async callback go here this phase mainly handles TCP errors, some system level I/O callback
+             deferred errors
+             Some operations finish in poll phase, but instead of executing immediately:Node says“Let’s process this in next loop cycle safely”That “next cycle execution” happens in: pending callbacks phase
+16. check -  this check phase executes callbacks scheduled by setImmediate()
+              “Check phase executes callbacks scheduled via setImmediate(), and it runs immediately after the poll phase.”
+
+17.close callback- The close callbacks phase executes callbacks for resources that have been closed, such as sockets or streams.
+                   It runs cleanup callbacks when something is closed/destroyed Example socket closed file stream closed network connections closed 
+                   const net = require("net");
+                   const server = net.createServer((socket) => {
+                    socket.on("close", () => {
+                       console.log("Socket closed");
+                       });
+                      socket.destroy(); // force close
+                       });
+                     server.listen(3000);
+                    when socket is destroyed close event callback runs in close callbacks phase
+                    close callbacks run when resource is explicitly closed (socket.destroy())
+                    or abruptly terminated(errors etc)
+                    this phase ensures - resources are cleaned properly no memory leaks final lifecycle events are handled
+                   “Close callbacks phase executes callbacks for resources like sockets or streams when they are closed or destroyed.”
+            setTimeout →“Cook this after 10 minutes”
+            setImmediate → “Do this right after you finish current orders”
+            👉 See the difference?✔️ One depends on time✔️ Other depends on workflow stage
+
+
+             PHASE       WHAT IT Handles
+             timers      setTimeout setImmediate
+             pending Callbacks  deferred system/I/O Callbacks
+             idle    internal(ignore)
+             poll    main i/O Callbacks
+             check   setImmediate
+             close callbacks cleanup

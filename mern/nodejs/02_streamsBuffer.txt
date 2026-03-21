@@ -1,0 +1,986 @@
+Priority 1 (MUST DO)
+Streams & Buffer
+Cluster vs Worker Threads
+Thread pool (libuv deep dive)
+🔥 Priority 2
+Express production patterns
+Error handling
+Redis caching
+🔥 Priority 3
+System design basics (SDE1)
+Performance tuning
+
+STREAM- 
+
+1.  stream - process data chunk by chunk it takes low memory faster scalable
+             a stream is a way to handle data peice by piece(chunks) instead of all at once.
+2.  Buffer - is a temporary memory aread used to store binary data
+             nodejs works with raw binary , not strings directly
+             why buffer?bcz files, network data, streams all come as binary chunks 
+             when we create a buffer its size is decided at creation time and it cannot grow or shink later
+             for example - const buf = buffer.alloc(5);
+                           buf[0]=65;
+                           buf[1]=66;
+                           console.log(buf);
+                           this buffer will always stay 5 bytes no matter what 
+                           we canot do buf.push(67)
+                           so yes Buffer = fixed size memory block
+                           js normally runs inside the v8 engine
+                           v8 manages memory for objects(like arrays strings)
+                           but buffers are special 
+                           they are stored in raw memory (c++ side of nodejs)
+                           not always inside normal js heap bcz buffers deal with binary data they need fast + low level memory access
+                           so nodejs uses outside memory(called off heap) for efficiency
+                           ->  whenever data flows in nodejs file reading , HTTP requests video/audio streaming 
+                               data doest come all at once it comes in chunks(binary pieces)
+                               those chunks are stored as buffers
+                               stream use buffers internally to handle data 
+            fixed size memory - size decided at creation, cannot change
+            stored outside v8 - uses low level memory for speed
+            uses in streams - handles chunks for binary data
+            not resizable  cannot grow shrink after creation 
+            " stream - flowing river , buffer is bottle and - drinking water from a bottle vs river flow 
+
+
+
+3- Types of Stream - there are 4 main types of streams
+                     1- Readable Stream -  read data for ex -  const fs = require("fs");
+                                                     const readStream = fs.createReadStream("file.txt");
+                                                     readStream.on("data",(chunk)=>{
+                                                        console(chunk.toString());
+                                                     })
+                     2- Writable Stream - write data const writeStream = fs.createWriteStream("file.txt");
+                                          writeStream.write("hello");
+                                          writeStream.end();   
+                     3-Duplex Stream - read + write 
+                                       example- TCP sockets
+                     4-Transform Stream - modify data while streaming 
+                                          const { Transform } = require("stream");
+                                          const transformStream = new Transform({
+                                            Transform(chunk,encoding,callback){
+                                                this.push(chunk,toString().toUpperCase());
+                                                callback() //"I'm done, give me next chunk"
+                                            }
+                                          })
+4- HOW STREAMS WORK INTERNALLY- streams use 
+                                    buffer internally data comes(stored in buffer) then processed chunk by chunk
+                                    event driven model - events(data end Error finish) 
+                                HighWaterMark - controls  buffer size
+                                                fs.createReadStream("file.txt",{HighWaterMark: 64*1024})
+                                                default- 64kb
+                                                64 * 1024 means 64 kilobytes (65536 bytes), which defines how much data is read into the buffer at a time.
+
+5. PIPE - connect streams together
+          const fs = require("fs");
+          fs.createReadStream("input.txt").pipe(fs.createWriteStream("output.txt"));                                              
+          why pipe - handle backpressue automatically(backpressue happens when the data producer(read stream) is faster than the data consumer(write stream)) 
+                     clean code 
+                     efficient
+                     .pipe() automatically handles backpressure by sending data from the readable stream to the writable stream, pausing the readable stream when the writable stream becomes overloaded, and resuming it once the writable stream is ready to receive more data again
+       
+           | Feature       | Buffer     | Stream     |
+| ------------- | ---------- | ---------- |
+| Data handling | Entire     | Chunk      |
+| Memory        | High       | Low        |
+| Speed         | Slower     | Faster     |
+| Use case      | Small data | Large data |
+
+
+🔥 Q1. What is a Buffer in Node.js?
+✅ Expected Answer:
+
+A Buffer in Node.js is a fixed-size memory allocation used to store binary data directly.
+
+Node.js works with raw binary data (streams, files, TCP), so Buffers act as a bridge between:
+
+JavaScript (string/objects)
+Low-level binary data
+
+Buffers are:
+
+Allocated outside V8 heap (for performance)
+Fixed size (not resizable)
+Used internally by streams
+
+👉 Example:
+
+const buf = Buffer.from("Hello");
+
+👉 Internally:
+
+Stored as bytes (UTF-8 encoded)
+💡 Bonus (impress interviewer):
+
+“Buffers help avoid frequent memory reallocations when dealing with I/O-heavy operations.”
+
+🔥 Q2. Why do we need Buffers?
+✅ Expected Answer:
+
+We need Buffers because:
+
+Node.js handles binary streams (network/file system)
+JavaScript doesn't natively support raw binary manipulation efficiently
+Data arrives in chunks, not complete form
+
+👉 Without Buffers:
+
+We’d constantly convert data → inefficient
+High memory overhead
+🔥 Strong Answer Line:
+
+“Buffers are essential for handling streaming data efficiently without converting everything into strings.”
+
+🔥 Q3. What is a Stream?
+✅ Expected Answer:
+
+A Stream is a way to process data incrementally (chunk by chunk) instead of loading the entire dataset into memory.
+
+This makes it:
+
+Memory efficient
+Faster for large data
+Suitable for real-time processing
+🔥 Strong Answer Structure:
+
+“Instead of loading a 1GB file into memory, streams process it in small chunks, reducing memory usage and improving performance.”
+
+🔥 Q4. Types of Streams?
+✅ Expected Answer:
+
+There are 4 types:
+
+Readable → read data
+Writable → write data
+Duplex → read + write
+Transform → modify data while streaming
+💡 Bonus:
+
+“Transform streams are a special case of duplex streams where output depends on input.”
+
+🔥 Q5. Difference between Buffer and Stream?
+✅ Expected Answer:
+Buffer	Stream
+Stores data	Transfers data
+Entire data in memory	Chunk-based
+Used internally	High-level abstraction
+
+👉 Key line:
+
+“Buffer is a data structure, Stream is a data flow mechanism.”
+
+🔥 Q6. Explain pipe() in streams
+✅ Expected Answer:
+
+pipe() connects a readable stream to a writable stream.
+
+readStream.pipe(writeStream);
+
+It:
+
+Transfers data automatically
+Handles backpressure internally
+Simplifies code
+🔥 Strong Line:
+
+“pipe abstracts manual data handling and ensures efficient data flow between streams.”
+
+🔥 Q7. What is backpressure?
+✅ Expected Answer (VERY IMPORTANT):
+
+Backpressure occurs when:
+👉 Writable stream is slower than readable stream
+
+This can:
+
+Overflow memory
+Crash application
+✅ How Node handles it:
+write() returns false
+Readable stream pauses
+Resumes on drain event
+🔥 Strong Answer Line:
+
+“Backpressure is a flow control mechanism to prevent overwhelming the consumer.”
+
+🔥 Q8. What is highWaterMark?
+✅ Expected Answer:
+
+highWaterMark defines:
+👉 Maximum buffer size before applying backpressure
+
+Example:
+
+fs.createReadStream("file.txt", { highWaterMark: 64 * 1024 });
+🔥 Strong Line:
+
+“It controls how much data is buffered before pausing the stream.”
+
+🔥 Q9. Flowing vs Paused mode?
+✅ Expected Answer:
+Flowing mode:
+Data flows automatically
+Triggered by data event
+Paused mode:
+Controlled manually
+Use read()
+🔥 Strong Line:
+
+“Flowing mode pushes data automatically, paused mode gives fine-grained control.”
+
+🔥 Q10. How streams work internally?
+✅ Expected Answer:
+
+Streams internally:
+
+Receive data → stored in buffer
+Emit events (data, end)
+Process chunks
+Use event loop for async execution
+Apply backpressure when needed
+🔥 Strong Answer Line:
+
+“Streams are event-driven abstractions over buffers, enabling efficient async data processing.”
+
+🔥 Q11. Real-world use case?
+✅ Expected Answer:
+File upload/download
+Video streaming
+API streaming
+Log processing
+Compression
+🔥 Best Answer:
+
+“Streaming large files like videos avoids loading entire content into memory and enables real-time delivery.”
+
+🔥 Q12. Coding Question
+👉 Copy file using streams
+const fs = require("fs");
+
+fs.createReadStream("input.txt")
+  .pipe(fs.createWriteStream("output.txt"));
+💡 Follow-up:
+
+👉 “How will you handle errors?”
+
+readStream.on("error", err => console.error(err));
+writeStream.on("error", err => console.error(err));
+🔥 Q13. Create custom transform stream
+✅ Expected Answer:
+const { Transform } = require("stream");
+
+const upperCase = new Transform({
+  transform(chunk, encoding, callback) {
+    this.push(chunk.toString().toUpperCase());
+    callback();
+  }
+});
+🔥 Q14. What happens if we use fs.readFile instead of streams?
+✅ Expected Answer:
+Entire file loads into memory ❌
+High RAM usage ❌
+Slow for large files ❌
+🔥 Strong Line:
+
+“Streams are preferred for large data, while readFile is fine for small files.”
+
+🧠 FINAL INTERVIEW EVALUATION CRITERIA
+
+As an SDE3, I judge:
+
+❌ Weak candidate:
+Only definitions
+No real-world understanding
+✅ Strong candidate:
+Explains why, not just what
+Talks about memory + performance
+Mentions backpressure
+Gives real examples
+🚀 FINAL TIP (VERY IMPORTANT)
+
+If you say this line in interview, you stand out:
+
+“Streams are built on top of buffers and use event-driven architecture to process data efficiently with backpressure handling.”
+🧠 Q1. Start simple — What is a Stream in Node.js?
+✅ Ideal Answer:
+
+A stream is a way to process data incrementally (in chunks) instead of loading the entire data into memory at once.
+
+This makes it:
+
+Memory efficient
+Faster for large data
+Suitable for real-time data processing
+
+Example:
+Instead of reading a 1GB file fully into memory, a stream processes it chunk by chunk.
+
+🎯 What I’m testing:
+Do you understand why streams exist (memory)?
+🔁 Follow-up:
+
+👉 How is this different from fs.readFile?
+
+✅ Ideal Answer:
+
+fs.readFile loads the entire file into memory before processing, while streams process data in chunks, making streams more efficient for large files.
+
+🔥 Q2. What is a Buffer?
+✅ Ideal Answer:
+
+A Buffer is a fixed-size memory allocation used to store raw binary data.
+
+Node.js uses buffers because:
+
+It deals with binary streams (file system, network)
+JavaScript doesn’t handle raw binary efficiently
+
+Buffers act as a bridge between:
+
+Binary data
+JavaScript-readable data
+🔁 Follow-up:
+
+👉 Where are Buffers stored?
+
+✅ Ideal Answer:
+
+Buffers are allocated outside the V8 heap, which prevents memory pressure on JavaScript’s garbage collector.
+
+🎯 What I’m testing:
+Low-level understanding
+Memory model awareness
+🚀 Q3. Explain different types of streams
+✅ Ideal Answer:
+Readable → read data
+Writable → write data
+Duplex → both read & write
+Transform → modifies data while streaming
+🔁 Follow-up:
+
+👉 Give a real example of Transform stream
+
+✅ Ideal Answer:
+
+Compression (zlib), encryption, or converting text to uppercase while streaming.
+
+🎯 What I’m testing:
+Can you connect theory → real systems?
+⚡ Q4. What is pipe() and why is it important?
+✅ Ideal Answer:
+
+pipe() connects a readable stream to a writable stream and handles data transfer automatically.
+
+readStream.pipe(writeStream);
+
+It:
+
+Simplifies code
+Handles backpressure automatically
+Improves performance
+🔁 Follow-up:
+
+👉 What problem does pipe solve internally?
+
+✅ Ideal Answer:
+
+It solves backpressure, ensuring the writable stream is not overwhelmed by the readable stream.
+
+🎯 What I’m testing:
+Awareness of hidden complexity
+💣 Q5. Explain Backpressure (VERY IMPORTANT)
+✅ Ideal Answer:
+
+Backpressure occurs when the producer (readable stream) is faster than the consumer (writable stream).
+
+This can cause:
+
+Memory overflow
+Performance degradation
+✅ How Node handles it:
+write() returns false → pause reading
+Resume when drain event fires
+🔥 Strong line:
+
+“Backpressure is a flow control mechanism that prevents overwhelming the consumer.”
+
+🎯 What I’m testing:
+This is a hire/no-hire signal at FAANG
+⚙️ Q6. What is highWaterMark?
+✅ Ideal Answer:
+
+It defines the maximum amount of data (buffer size) a stream can hold before applying backpressure.
+
+Default:
+
+64KB for readable streams
+🎯 What I’m testing:
+Internal tuning awareness
+🧠 Q7. How do streams work internally?
+✅ Ideal Answer:
+
+Streams internally:
+
+Receive data → store in buffer
+Emit events (data, end, error)
+Process chunk by chunk
+Use event loop for async execution
+Apply backpressure when needed
+🔥 Strong line:
+
+“Streams are event-driven abstractions built on top of buffers.”
+
+🎯 What I’m testing:
+System-level thinking
+🧪 Q8. Coding — Copy a large file efficiently
+✅ Ideal Answer:
+const fs = require("fs");
+
+const read = fs.createReadStream("input.txt");
+const write = fs.createWriteStream("output.txt");
+
+read.pipe(write);
+🔁 Follow-up:
+
+👉 How do you handle errors?
+
+read.on("error", console.error);
+write.on("error", console.error);
+🎯 What I’m testing:
+Practical coding ability
+🔥 Q9. Flowing vs Paused mode?
+✅ Ideal Answer:
+
+Flowing mode:
+
+Data automatically flows
+Triggered by data event
+
+Paused mode:
+
+Controlled manually using read()
+🎯 What I’m testing:
+Deep stream mechanics
+💡 Q10. Real-world scenario
+
+👉 How would you implement file upload handling?
+
+✅ Ideal Answer:
+
+Use streams to process file chunks instead of loading the entire file into memory.
+
+Example:
+
+Use req as a readable stream
+Pipe it to file system or cloud storage
+🔥 Strong answer:
+
+“Streaming avoids memory overload and allows handling large uploads efficiently.”
+❓ Q1. Is a stream always asynchronous?
+✅ Ideal Answer:
+
+No. Streams are not inherently async, but in Node.js they are typically used in asynchronous, event-driven I/O operations.
+
+🎯 What I’m testing:
+
+Can you avoid blanket statements?
+
+❓ Q2. Can a stream exist without a buffer?
+✅ Ideal Answer:
+
+No. Streams internally rely on buffers to temporarily store chunks before processing.
+
+🔥 Strong line:
+
+“Streams are abstractions over buffers.”
+
+❓ Q3. If I increase highWaterMark, what happens?
+✅ Ideal Answer:
+Larger chunks → fewer I/O calls → potentially faster
+But higher memory usage
+Risk of increased latency if buffer fills slowly
+🎯 What I’m testing:
+
+Trade-offs (FAANG loves this)
+
+❓ Q4. What happens if you don’t consume a readable stream?
+✅ Ideal Answer:
+
+Data stays in internal buffer → memory builds up → can lead to memory pressure or leak-like behavior.
+
+💣 SECTION 2: EDGE CASES (THIS IS WHERE MOST FAIL)
+❓ Q5. What happens if writable stream is slower but you ignore backpressure?
+✅ Ideal Answer:
+Buffer keeps filling
+Memory usage increases
+Eventually process may crash (OOM)
+🔥 Strong line:
+
+“Ignoring backpressure breaks flow control and can crash the system.”
+
+❓ Q6. Can pipe() cause memory leaks?
+✅ Ideal Answer:
+
+Yes, if:
+
+Errors are not handled
+Streams are not properly closed (end not called)
+Long-lived pipes without cleanup
+🔥 Bonus:
+
+Use pipeline() instead of pipe() for safer handling.
+
+❓ Q7. What happens if you call write() after end()?
+✅ Ideal Answer:
+
+It throws an error:
+
+Error: write after end
+🎯 What I’m testing:
+
+API correctness awareness
+
+❓ Q8. What if a stream emits error and you don’t handle it?
+✅ Ideal Answer:
+
+The process will crash.
+
+🔥 Strong line:
+
+“Unhandled stream errors bubble up and terminate the Node.js process.”
+
+❓ Q9. Can readable stream push data faster than consumer even with pipe?
+✅ Ideal Answer:
+
+No (in normal cases), because pipe() automatically manages backpressure.
+
+⚠️ Edge nuance:
+
+Manual stream handling can break this guarantee.
+
+❓ Q10. What happens if chunk size is too small?
+✅ Ideal Answer:
+Too many I/O operations
+Overhead increases
+Performance degrades
+⚔️ SECTION 3: DEEP INTERNAL GRILLING
+❓ Q11. Explain flow of data inside stream step by step
+✅ Ideal Answer:
+Source produces data
+Stored in internal buffer
+Emitted via data event
+Passed to consumer
+If consumer slow → backpressure triggers
+Flow pauses/resumes
+🔥 Strong line:
+
+“Data flows from source → buffer → consumer with backpressure control.”
+
+❓ Q12. Difference between read() and on('data')?
+✅ Ideal Answer:
+read()	on('data')
+Pull-based	Push-based
+Manual control	Automatic flow
+🎯 What I’m testing:
+
+Deep stream modes understanding
+
+❓ Q13. What is objectMode in streams?
+✅ Ideal Answer:
+
+Allows streams to work with JavaScript objects instead of binary data
+
+{ objectMode: true }
+🔥 Strong line:
+
+“In objectMode, each chunk is an object instead of a Buffer.”
+
+❓ Q14. Why is Buffer fixed-size?
+✅ Ideal Answer:
+
+To avoid:
+
+Frequent memory reallocations
+Performance overhead
+🎯 What I’m testing:
+
+Memory optimization understanding
+
+🧪 SECTION 4: TRICKY CODING THINKING
+❓ Q15. How would you manually implement pipe?
+✅ Ideal Answer:
+readStream.on("data", (chunk) => {
+  if (!writeStream.write(chunk)) {
+    readStream.pause();
+  }
+});
+
+writeStream.on("drain", () => {
+  readStream.resume();
+});
+🎯 What I’m testing:
+
+Do you actually understand pipe?
+
+❓ Q16. How to safely handle multiple streams?
+✅ Ideal Answer:
+
+Use:
+
+const { pipeline } = require("stream");
+
+pipeline(read, transform, write, (err) => {
+  if (err) console.error(err);
+});
+🔥 Strong line:
+
+“pipeline ensures proper error handling and cleanup.”
+
+❓ Q17. How would you stream a 10GB file via API?
+✅ Ideal Answer:
+Use readable stream from file
+Pipe to response (res)
+Set headers properly
+Avoid buffering entire file
+🔥 Strong answer:
+
+“Streaming ensures constant memory usage regardless of file size.”
+
+🧠 SECTION 5: META-LEVEL THINKING
+❓ Q18. When NOT to use streams?
+✅ Ideal Answer:
+Small data (overhead not worth it)
+Simple operations
+When full data is needed at once
+❓ Q19. Why Node.js is strong for streaming?
+✅ Ideal Answer:
+Event-driven architecture
+Non-blocking I/O
+Efficient memory handling
+Native stream support
+🧠 FINAL INTERVIEW VERDICT (BRUTAL)
+If you handled all this:
+
+👉 You are top 10–15% SDE1 candidate
+
+If you struggled in:
+Backpressure ❌ → reject
+Internal flow ❌ → reject
+Edge cases ❌ → borderline
+💣 Q1. Explain how Streams interact with the Event Loop
+✅ Ideal Answer:
+
+Streams are event-driven abstractions that rely on the Event Loop for async execution.
+
+Flow:
+
+Data comes from OS / libuv thread pool
+Stored in internal buffer
+Event loop processes callbacks
+Emits events like data, end
+JS handlers consume chunks
+🔥 Strong Line:
+
+“Streams integrate with the event loop by scheduling I/O callbacks, enabling non-blocking chunk processing.”
+
+🎯 What I’m testing:
+System-level understanding (Node internals)
+💣 Q2. Why are Buffers allocated outside V8 heap?
+✅ Ideal Answer:
+
+Buffers are allocated outside V8 heap to:
+
+Avoid GC pressure
+Handle large binary data efficiently
+Prevent frequent garbage collection pauses
+🔥 Strong Line:
+
+“Offloading buffers outside V8 ensures predictable memory usage and avoids GC overhead.”
+
+💣 Q3. What happens internally when you call fs.createReadStream()?
+✅ Ideal Answer:
+File descriptor opened via libuv
+Data read in chunks from OS
+Stored in internal buffer
+data events emitted
+Event loop executes handlers
+Ends with end event
+🎯 What I’m testing:
+Deep execution flow
+💣 Q4. Difference between pipe() and pipeline() (TRICKY)
+✅ Ideal Answer:
+pipe()	pipeline()
+Basic connection	Safer abstraction
+No automatic error handling	Handles errors
+Manual cleanup needed	Auto cleanup
+🔥 Strong Line:
+
+“pipeline is preferred in production because it ensures proper error propagation and resource cleanup.”
+
+💣 Q5. Can Streams block the Event Loop?
+✅ Ideal Answer:
+
+Normally no, because streams use async I/O.
+
+BUT:
+
+Heavy synchronous processing inside data handler can block event loop
+🔥 Strong Line:
+
+“Streams are non-blocking, but user code inside handlers can block.”
+
+💣 Q6. What happens if you convert every chunk to string immediately?
+✅ Ideal Answer:
+Extra CPU overhead
+Encoding cost
+Reduced performance
+
+Better:
+
+Process as Buffer when possible
+💣 Q7. Explain zero-copy in Node.js (VERY ADVANCED)
+✅ Ideal Answer:
+
+Zero-copy means:
+👉 Data is passed without copying memory
+
+Example:
+
+Buffer slices
+Streams piping
+
+Benefit:
+
+High performance
+Low memory overhead
+🔥 Strong Line:
+
+“Zero-copy avoids unnecessary memory duplication, improving throughput.”
+
+💣 Q8. What is cork() and uncork() in writable streams?
+✅ Ideal Answer:
+cork() → buffer multiple writes
+uncork() → flush them together
+
+👉 Optimizes performance by batching writes
+
+💣 Q9. How does Node prevent memory leaks in streams?
+✅ Ideal Answer:
+Backpressure mechanism
+Buffer size control (highWaterMark)
+Event-based cleanup (end, close)
+⚠️ Reality:
+
+Node gives tools — developer must still handle errors properly
+
+💣 Q10. What is the difference between TCP streaming and file streaming?
+✅ Ideal Answer:
+TCP Stream	File Stream
+Network-based	Disk-based
+Unpredictable flow	Controlled flow
+Duplex	Mostly readable/writable
+💣 Q11. What happens if multiple pipes are chained?
+read.pipe(transform1).pipe(transform2).pipe(write);
+✅ Ideal Answer:
+Data flows sequentially
+Each transform modifies data
+Backpressure propagates through chain
+🔥 Strong Line:
+
+“Backpressure flows upstream across all piped streams.”
+
+💣 Q12. How would you debug a memory issue in streaming?
+✅ Ideal Answer:
+Monitor heap usage
+Check unhandled streams
+Verify backpressure handling
+Look for unclosed streams
+
+Tools:
+
+process.memoryUsage()
+Chrome DevTools
+💣 Q13. Why is Node.js good for streaming systems like Netflix?
+✅ Ideal Answer:
+Non-blocking I/O
+Event-driven
+Efficient memory usage
+Native stream support
+💣 Q14. Edge Case — What if readable emits faster than writable AND you ignore drain?
+✅ Ideal Answer:
+Memory grows
+Event loop pressure increases
+Possible crash (OOM)
+💣 Q15. Trick — Can you reuse a stream?
+✅ Ideal Answer:
+
+No. Streams are generally consumed once.
+
+🧠 FINAL BAR-RAISER VERDICT
+If you can confidently explain ALL above:
+
+👉 ✅ You are READY for Amazon SDE1
+👉 ✅ You can clear Node.js backend rounds
+👉 ✅ You’re above 85–90% candidates
+
+🚨 FINAL REALITY CHECK
+You are READY if:
+You explain without memorization
+You connect concepts (stream + event loop + memory)
+You handle edge cases confidently
+🚀 LAST STEP (DO THIS)
+
+Before interview:
+
+👉 Practice saying this:
+
+“Node.js streams are event-driven abstractions over buffers that enable efficient, non-blocking data processing with built-in backpressure control.”
+🚀 PROBLEM 1: DESIGN — Large File Upload Service (like Google Drive)
+❓ Question:
+
+Design a backend service that allows users to upload very large files (10GB+) efficiently
+
+✅ What I EXPECT (Ideal Answer)
+🔹 Core idea:
+
+👉 Use streaming instead of buffering
+
+🧩 Architecture:
+1. Client
+Uploads file in chunks (multipart upload)
+2. Backend (Node.js)
+
+👉 Use request as a stream:
+
+req.pipe(storageStream);
+3. Storage
+AWS S3 (multipart upload)
+OR disk storage via streams
+🔥 Key Points (YOU MUST SAY):
+✅ 1. No full buffering
+
+“I will not store entire file in memory”
+
+✅ 2. Use streaming pipeline
+pipeline(req, transform?, storage, cb);
+✅ 3. Handle backpressure
+
+Automatically handled by streams
+
+✅ 4. Resume upload
+Use chunk IDs
+Store progress in DB
+✅ 5. Validation
+File size limit
+Type checking
+🎯 Bonus (VERY STRONG SIGNAL):
+
+“I would generate pre-signed URLs to offload upload directly to S3.”
+
+💻 PROBLEM 2: CODING (REAL INTERVIEW LEVEL)
+❓ Question:
+
+Create a transform stream that:
+👉 counts number of words in a large file
+
+✅ Ideal Answer:
+const { Transform } = require("stream");
+
+class WordCountStream extends Transform {
+  constructor() {
+    super();
+    this.count = 0;
+  }
+
+  _transform(chunk, encoding, callback) {
+    const words = chunk.toString().split(/\s+/).filter(Boolean);
+    this.count += words.length;
+    callback(null, chunk);
+  }
+
+  _flush(callback) {
+    console.log("Total words:", this.count);
+    callback();
+  }
+}
+🎯 What I’m testing:
+Custom stream
+Chunk handling
+State management
+🧪 PROBLEM 3: DEBUGGING
+❓ Code:
+readStream.on("data", (chunk) => {
+  writeStream.write(chunk);
+});
+
+👉 Issue?
+
+❗ Expected Answer:
+
+This ignores backpressure
+
+✅ Fix:
+readStream.on("data", (chunk) => {
+  if (!writeStream.write(chunk)) {
+    readStream.pause();
+  }
+});
+
+writeStream.on("drain", () => {
+  readStream.resume();
+});
+🔥 Strong line:
+
+“Without handling drain, writable stream can be overwhelmed.”
+
+⚔️ PROBLEM 4: EDGE CASE
+❓ What happens if upload is interrupted midway?
+✅ Ideal Answer:
+Store chunk metadata in DB
+Resume from last uploaded chunk
+Use upload ID (like S3 multipart)
+🎯 Bonus:
+
+Use checksum to validate chunks
+
+⚡ RAPID GRILLING (META STYLE)
+❓ Why not use multer for large files?
+✅ Ideal Answer:
+Multer buffers files (can increase memory usage)
+Not ideal for very large files
+Streaming approach is better
+❓ What if user uploads 100 files simultaneously?
+✅ Ideal Answer:
+Use concurrency limits
+Queue system (Bull / RabbitMQ)
+Avoid overwhelming server
+❓ How to secure file upload?
+✅ Ideal Answer:
+File type validation
+Size limits
+Virus scanning
+Auth + signed URLs
+❓ How to stream file to client (download)?
+✅ Ideal Answer:
+fs.createReadStream(file).pipe(res);
+❓ What if client is slow?
+✅ Ideal Answer:
+Backpressure handles automatically
+Stream pauses
+🧠 FINAL AMAZON EVALUATION
+🔥 STRONG HIRE if:
+You mention streaming over buffering
+You handle backpressure
+You think about failures (resume upload)
+You discuss scalability
+❌ REJECT if:
+You say “store file in memory”
+You ignore backpressure
+No failure handling
+🏁 FINAL VERDICT FOR YOU
+
+👉 If you can explain all THIS smoothly:
+
+✅ YOU ARE READY FOR:
+Amazon SDE1
+Meta backend rounds
+Any Node.js backend interview
