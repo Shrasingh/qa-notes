@@ -55,8 +55,6 @@
 
    2. CLOSURES HOLDING MEMORY- closures can retain variables longer than expected.
    we can fix this by avoiding unneccessary large variables in closures.
-
-
    3. UNREMOVED EVENT LISTENERS
    node use event emitter
    if listeners are not removed -> memory grows

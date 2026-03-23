@@ -1,0 +1,283 @@
+1. problem with nodejs is - single threaded(main thread)
+                            uses event loop for async i/o 
+                            it is good for - apis, db calls, network
+                            but bad for cpu heavy tasks(image processing,hashing,loops)
+        for ex - while(true){} // block everything
+        so we need - parallelism
+                     multi core usage
+                     that's where cluster,worker threads
+
+
+2. cluster(multi process)- multiple nodejs processes(forks)
+
+
+       each process - has its own memory
+                      has its own event loop
+                      runs on separate CPU core
+                      uses cluster module
+
+                      Master Process
+     |
+                 ---------------------
+                  |     |     |      |
+                  W1    W2    W3     W4
+        master creates worker using fork()
+        all worker share same port(via os load balancing) 
+    *multi-process model 
+    *no share memory
+    *IPC(inter process communication) required
+    *good for scaling servers   
+
+    WHEN TO USE cluster? when
+          we want to handle more requests
+          CPU has multiple cores
+          stateless apis
+          ex - express server scaling    
+    LIMITATIONS - memory duplication(each process heavy)
+                  IPC is slow
+                  not good for shared state       
+
+
+
+3. worker thread(multi thread) - worker threads - multiple threads in same process
+         introduces to solve CPU heavy tasks
+         how it works - 
+              Main Thread
+                  |
+            ----------------
+            |      |       |
+           WT1    WT2     WT3    
+           . all threads share : 
+                 . memory
+            . communication:
+                  . message passing 
+                  . SharedArrayBuffer     
+        . multi threaded 
+        . shared memory possible
+        . faster than cluster(no process over head)   
+        . best for cpu heavy tasks   
+
+        WHEN TO USE WORKER THREAS?
+          1.heavy computation(hashing compression ML) 
+          2.need shared memory
+          3.avoid blocking event loop
+
+
+
+4.CLUSTER vs WORKER
+      | Feature       | Cluster         | Worker Threads          |
+    | ------------- | --------------- | ----------------------- |
+    | Model         | Multi-process   | Multi-thread            |
+    | Memory        | Separate ❌      | Shared ✅                |
+    | Communication | IPC             | Message + Shared memory |
+    | Use case      | Scaling servers | CPU tasks               |
+    | Overhead      | High            | Low                     |
+    | Crash impact  | Isolated        | Can affect process      |
+                how will u scale node.js
+                use cluster for horizonatl scaling
+                use worker thread for cpu worker
+
+
+5. QUES
+     1. Load balancing in cluster - round robin(default in modern node)
+                                        Requests are sent one-by-one in order to each worker
+                                        Like: Worker1 → Worker2 → Worker3 → repeat
+                                    OS-level scheduling
+                                        OS decides which worker gets the request
+                                        Less predictable
+                                    it matters - prevents overload on one worker
+                                                 improve performance+response time
+
+     2. Shared Memory(Worker threads) -  
+           const shared = new SharedArrayBuffer(4);
+           enables real parallel algorithms
+           used in high performance system
+          normally Threads/processes dont share memory,they communicate by copying data
+          but with const shared = new SharedArrayBuffer(4);
+          multiple threads can access the same memory directly
+          why its powerfull - no copying faster,enables true parallel computing
+            imp - we must handle race conditions,synchronizations(like locks)
+                  tools - Atomics in javascript
+             
+      3.WORKER pool- instead of creating threads repeatedly(bcz it is expensive) use pool(like thread pool),libraries like Piscina
+              Create a fixed number of workers
+              Reuse them for tasks
+      4. Fault Tolerance (Cluster)- if a worker crashes -> system should recover automatically.
+
+
+       | Concept         | Real-Life Role           |
+       | --------------- | ------------------------ |
+       | Cluster         | Multiple employees       |
+       | Load Balancer   | Manager assigning work   |
+       | Worker Threads  | Specialists doing tasks  |
+       | Shared Memory   | Shared office whiteboard |
+       | Worker Pool     | Fixed team ready to work |
+       | Fault Tolerance | Backup employees ready   |
+
+
+6.QUES- 
+      Q1: Why Node.js is single-threaded but still scalable?
+          event loop + async I/o
+          but cpu tasks block -> solved by worker threads
+       Q2:Cluster vs Worker Threads?
+          cluster -> multiple processing for scaling
+          worker thread -> multiple threads for computation
+        Q3: Can workers share memory in cluster?
+              no(separate memory)
+              only via IPC
+        Q4: When NOT to use Worker Threads?
+            I/O heavy tasks(node already handles efficiently)
+        Q5: What happens if one worker crashes?
+             cluster only that worker dies 
+             can restart using master
+        Q6: Why not always use Worker Threads(Worker Threads allow you to run JavaScript in parallel threads, instead of the usual single-threaded event loop.)?
+             complexity race conditions,Overhead if not needed
+        Q7: How communication happens in Worker Threads?
+              postMessage, parentPort,SharedArrayBuffer        
+        Q8:What is fork in cluster?
+             creates new Node.js process using same code      
+        Q9: How many workers should you create?
+              usually no of cpu cores  ::Ideally, the number of workers equals the number of CPU cores to fully utilize parallelism. However, we can create more workers for I/O-bound workloads or fewer workers to reduce contention and leave resources for other processes   
+        Q10: Real-world usage?
+               cluster - api servers
+               worker threads - image processing,crypto   
+         11.Node.js is single-threaded. Then how does it handle multiple requests concurrently?
+              nodejs uses - event loop , non blocking I/O so instead of multiple threads it delegated I/O to system
+              handles callbacks when ready but - cpu heavy tasks block event loop that's why we use worker threads
+              why do we need cluster- worker threads solve 
+         12.Difference between Cluster and Worker Threads?
+                Cluster-Multi-process,Each worker has its own memory,Used for scaling servers
+                Worker Threads-Multi-thread,Shared memory possible,Used for CPU-intensive tasks      
+                which one is faster? worker(lower Overhead),but depends on use case
+                
+         13.You have an API that does image processing and is slow. How will you optimize?  
+              Move CPU-heavy image processing to Worker Threads
+              Keep main thread free for handling requests
+              Optionally:
+                   Use worker pool (like Piscina)
+              If traffic is high:Combine with Cluster for scaling
+🧪 Q4: DEEP UNDERSTANDING
+👨‍💻 Interviewer:
+
+Why doesn’t Node.js use threads by default like Java?
+
+✅ Answer:
+Simplicity (no race conditions)
+Event loop is efficient for I/O
+Threads introduce:
+synchronization issues
+memory overhead
+
+👉 Worker Threads added later only for CPU tasks
+
+🧪 Q5: INTERNAL WORKING
+👨‍💻 Interviewer:
+
+How does Cluster share the same port across workers?
+
+✅ Answer:
+Master process creates server
+Distributes connections to workers
+Uses:
+Round-robin scheduling (Node ≥ v16)
+🔥 Follow-up:
+
+Is it always round-robin?
+
+👉 Answer:
+
+Depends on OS & Node version
+Earlier → OS scheduling
+Now → mostly round-robin
+🧪 Q6: MEMORY QUESTION (TRICKY)
+👨‍💻 Interviewer:
+
+Can two worker threads modify same variable?
+
+✅ Answer:
+Yes, using:
+SharedArrayBuffer
+But:
+Need synchronization (Atomics)
+Otherwise race condition
+🔥 Follow-up:
+
+Does this happen in cluster?
+
+👉 Answer:
+
+❌ No shared memory in cluster
+🧪 Q7: FAILURE HANDLING
+👨‍💻 Interviewer:
+
+What happens if a worker crashes in cluster?
+
+✅ Answer:
+Only that worker dies
+Master process can restart it
+cluster.on('exit', () => {
+  cluster.fork();
+});
+🔥 Follow-up:
+
+What about Worker Threads?
+
+👉 Answer:
+
+Can crash whole process if not handled
+🧪 Q8: DESIGN QUESTION (VERY IMPORTANT)
+👨‍💻 Interviewer:
+
+Design a Node.js system to handle:
+
+1M requests/day
+Some heavy computation
+✅ Perfect Answer Structure:
+Use Cluster
+Utilize all CPU cores
+Scale request handling
+Use Worker Threads
+Offload heavy computation
+Use:
+Load balancer (NGINX)
+Worker pool
+Optional:
+Queue (BullMQ)
+
+👉 This answer = selected candidate
+
+🧪 Q9: PRACTICAL CODING
+👨‍💻 Interviewer:
+
+Write a small example using Worker Threads
+
+✅ Answer:
+const { Worker } = require('worker_threads');
+
+const worker = new Worker(`
+  const { parentPort } = require('worker_threads');
+  parentPort.postMessage(2 + 2);
+`, { eval: true });
+
+worker.on('message', (msg) => {
+  console.log(msg);
+});
+🔥 Follow-up:
+
+Is this efficient for many tasks?
+
+👉 Answer:
+
+❌ No → create worker pool
+🧪 Q10: ADVANCED (RARE BUT POWERFUL)
+👨‍💻 Interviewer:
+
+When will Cluster NOT improve performance?
+
+✅ Answer:
+If app is:
+CPU-bound without optimization
+heavily dependent on shared state
+Because:
+Memory duplication
+IPC overhead

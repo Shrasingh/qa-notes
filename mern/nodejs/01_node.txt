@@ -16,7 +16,8 @@
           Two queue-microtask(promise,process.nextTick),macrotask Queue(setTimeout,setImmediate)
           VIP CUSTOMERS- microtask queue
           NORMAL CUSTOMERS - macrotask
-          Node.js uses a single-threaded event loop that continuously checks the call stack and callback queues, executing synchronous code first, then microtasks, and then macrotasks, while delegating heavy operations to worker threads via libuv.
+          Node.js uses a single-threaded event loop that continuously checks the call stack and callback queues, executing synchronous code first,
+          then microtasks, and then macrotasks, while delegating heavy operations to worker threads via libuv.
 1.Node.js is a JavaScript runtime built on Chrome’s V8 engine that allows JavaScript to run on the server side.
 It uses
 Event-driven architecture
@@ -42,13 +43,10 @@ Why Node.js is good for scalable systems?
     Lightweight:
     Single-threaded architecture
 Node.js uses one main thread instead of creating many threads, which reduces memory usage.
-
 Non-blocking I/O
 It performs tasks asynchronously, so it doesn't wait for operations to finish.
-
 Event-driven model
 Uses an event loop to handle multiple requests efficiently.
-
 Efficient memory usage
 Because it avoids multiple threads, it consumes less RAM.
 Fast execution with V8 engine
@@ -122,6 +120,15 @@ async programming
     A callback is a function passed as an argument to another function and executed after an asynchronous task finishes.
     2. Promises
     A promise is an object that represents the future result of an asynchronous operation, which can be resolved (success) or rejected (error).
+    Example - You order pizza → get a token/receipt
+That receipt = Promise
+Kitchen preparing food = async operation
+When ready:
+You get pizza → resolved
+Restaurant cancels → rejected
+
+👉 Key point:
+You don’t stand in the kitchen waiting. You hold a reference to something that will complete later.
     3. Async/Await - Async/Await is a modern syntax that allows writing asynchronous code in a synchronous-looking way, making it easier to read and manage promises.   
 Callback Example
 fs.readFile("file.txt", (err,data)=>{
@@ -175,17 +182,11 @@ Explain difference between
 In Node.js, the Event Loop processes asynchronous operations in several phases. One of the most important phases is the Timer phase.
 Let’s break the Timer phase in detail: what it is, why it exists, how it works internally, and its components.
 1️⃣ What is the Timer Phase?
-
 The Timer phase is the first phase of the Node.js event loop.
-
 It is responsible for executing callbacks scheduled by:
-
 setTimeout()
-
 setInterval()
-
 These functions schedule a callback after a specified delay.
-
 Example:
 setTimeout(() => {
   console.log("Hello after 2 seconds");
@@ -246,29 +247,18 @@ If NO → wait for next loop.
 The Timer phase contains several internal structures.
 
 1️⃣ Timer Queue
-
 A queue of scheduled timers.
-
 Each timer has:
-
 expiration time
-
 callback
-
 repeat flag (for interval)
-
 Example structure:
-
 Timer Queue
-
 Timer 1 → expires at 2000ms
 Timer 2 → expires at 500ms
 Timer 3 → expires at 1000ms
-
 Timers are executed when their time has passed.
-
 2️⃣ Expired Timer Detection
-
 Node compares:
 current_time >= timer_expiration_time
 Example:
@@ -309,9 +299,7 @@ calculate next expiration
 ↓
 push timer back to queue
 5️⃣ Execution Flow of the Timer Phase
-
 Example code:
-
 setTimeout(() => console.log("A"), 1000);
 setTimeout(() => console.log("B"), 500);
 setTimeout(() => console.log("C"), 1500);
@@ -480,7 +468,6 @@ Async engine used internally: libuv
 This is a very common FAANG interview question.
 
 First understand where they execute in the event loop phases.
-
 Event loop phase order
 Timers
 ↓
@@ -570,13 +557,9 @@ setTimeout executes in TIMERS phase
 The current event loop state determines execution order.
 
 2️⃣ How Node.js Stores Timers Internally (libuv)
-
 Timers are implemented by libuv, the async engine behind Node.js.
-
 Node uses a data structure optimized for fast timer lookup.
-
 Core structure
-
 Internally libuv uses a Min Heap (Priority Queue).
 
 Heap property:
@@ -801,22 +784,15 @@ Promise.resolve().then(() => console.log("promise"));
 console.log("end");
 
 Execution:
-
 start
 end
 promise
 timeout or immediate
-
 Timer vs immediate order depends on loop state.
-
 Final Interview Summary
-
 If asked in FAANG interview:
-
 Node Event Loop Definition
-
 The Node.js event loop is a mechanism that allows JavaScript to perform non-blocking asynchronous operations by delegating tasks to the system kernel and processing callbacks in phases using the libuv library.
-
 Key Phases
 Timers
 Pending callbacks
@@ -891,7 +867,6 @@ Priority in Node.js:
 3️⃣ Timers
 
 process.nextTick runs before the microtask queue.
-
 3. setImmediate vs setTimeout
 setImmediate(() => {
   console.log("Immediate");
@@ -937,9 +912,9 @@ console.log("Start");
 
 Promise.resolve().then(() => {
   console.log("P1");
-}).then(() => {
+  }).then(() => {
   console.log("P2");
-});
+  });
 
 console.log("End");
 Output
@@ -1033,7 +1008,6 @@ The Node.js event loop runs in phases:
 6️⃣ Close Callbacks
 
 Priority queues:
-
 process.nextTick queue
 ↓
 Microtask queue (Promises)
