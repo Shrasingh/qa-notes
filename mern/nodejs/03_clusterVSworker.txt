@@ -281,3 +281,66 @@ heavily dependent on shared state
 Because:
 Memory duplication
 IPC overhead
+
+Think of a restaurant with multiple branches:
+
+Each branch = one process
+All branches serve the same menu (your app)
+Customers (requests) are distributed across branches
+
+👉 More branches = more customers served at the same time
+
+⚙️ Key points:
+Uses multiple processes
+Each has its own memory
+Best for handling many requests (I/O tasks) like APIs, web servers
+
+What it is:
+Worker Threads allow you to run multiple threads inside one process.
+
+Why?
+To handle heavy CPU tasks without blocking the main thread.
+
+🧠 Real-life example:
+
+Think of a single kitchen with multiple chefs:
+
+Kitchen = one process
+Chefs = threads
+Each chef works on a different dish (task)
+
+👉 Work gets done faster without opening new restaurants
+
+⚙️ Key points:
+Uses threads inside one process
+Shared memory (can communicate faster)
+Best for CPU-heavy tasks like:
+image processing
+data calculations
+video encoding
+⚡ Cluster vs Worker Threads (Quick Compare)
+Feature	Cluster 🏢	Worker Threads 👨‍🍳
+Type	Multi-process	Multi-thread
+Memory	Separate	Shared
+Best for	Handling requests	Heavy computations
+CPU usage	Uses multiple cores	Uses multiple cores
+Communication	Slower (IPC)	Faster
+🔥 Simple Rule to Remember
+Cluster → scale your server (more users)
+Worker Threads → speed up heavy tasks
+| Feature       | Cluster         | Worker Threads          |
+| ------------- | --------------- | ----------------------- |
+| Model         | Multi-process   | Multi-thread            |
+| Memory        | Separate ❌      | Shared ✅                |
+| Communication | IPC             | Message + Shared memory |
+| Use case      | Scaling servers | CPU tasks               |
+| Overhead      | High            | Low                     |
+| Crash impact  | Isolated        | Can affect process      |
+| Feature       | Cluster 🏢          | Worker Threads 👨‍🍳 |
+| ------------- | ------------------- | -------------------- |
+| Type          | Multi-process       | Multi-thread         |
+| Memory        | Separate            | Shared               |
+| Best for      | Handling requests   | Heavy computations   |
+| CPU usage     | Uses multiple cores | Uses multiple cores  |
+| Communication | Slower (IPC)        | Faster               |
+

@@ -389,7 +389,6 @@ setTimeout(() => {
 setImmediate(() => {
   console.log("immediate");
 });
-
 fs.readFile(__filename, () => {
   console.log("file read");
 });
@@ -399,18 +398,13 @@ Possible output:
 file read
 immediate
 timeout
-
 Why?
-
 Because poll phase finished before timer check.
 
 9️⃣ Performance Optimizations
-
-Node.js optimizes timers by:
-
-Timer grouping
-
-Timers with same delay grouped.
+   Node.js optimizes timers by:
+   Timer grouping
+   Timers with same delay grouped.
 
 Example:
 
@@ -433,24 +427,16 @@ Timer Phase in Node.js
 Purpose:
 
 Execute callbacks scheduled with setTimeout and setInterval.
-
-Key components:
-
-1️⃣ Timer queue
-2️⃣ Expiration detection
-3️⃣ Callback execution queue
-4️⃣ Repeat timer scheduling
-
+   Key components:
+   1️⃣ Timer queue
+   2️⃣ Expiration detection
+   3️⃣ Callback execution queue
+   4️⃣ Repeat timer scheduling
 Important rules:
-
 Delay is minimum, not exact
-
 Runs first phase of event loop
-
 Implemented by libuv
-
 ✅ Simple mental model
-
 Register timer
 ↓
 Timer stored in queue
@@ -561,17 +547,11 @@ Timers are implemented by libuv, the async engine behind Node.js.
 Node uses a data structure optimized for fast timer lookup.
 Core structure
 Internally libuv uses a Min Heap (Priority Queue).
-
 Heap property:
-
 Parent node expiration ≤ child expiration
-
 So the earliest timer is always at the root.
-
 Timer Structure
-
 Each timer contains:
-
 uv_timer_t
 │
 ├── callback
@@ -682,77 +662,50 @@ current_time >= timer_expiration
 Example:
 setTimeout(() => console.log("timer"), 100);
 Phase 2 — Pending Callbacks
-Handles some system-level callbacks.
-Examples:
-TCP errors
-DNS callbacks
-some OS operations
-Rarely discussed in interviews.
+  Handles some system-level callbacks.
+  Examples:TCP errors, DNS callbacks, some OS operations
+  Rarely discussed in interviews.
 Phase 3 — Idle / Prepare
-Internal phase used by libuv.
-Purpose:
-prepare for poll phase
-Not exposed to developers.
+   Internal phase used by libuv.
+   Purpose:
+   prepare for poll phase
+   Not exposed to developers.
 Phase 4 — Poll Phase (Most Important)
-This is the heart of the event loop.
-Poll phase handles:
-network I/O
-file system callbacks
-database responses
-
-Example:
-
-fs.readFile("file.txt", callback);
-
-Flow:
-
-OS performs file read
-↓
-callback queued in poll phase
-↓
-event loop executes callback
-Poll Phase Behavior
-
-Poll does two things:
-1️⃣ Execute I/O callbacks
-execute queued I/O callbacks
-2️⃣ Wait for new events
-
-If nothing is ready:
-
-event loop sleeps
-
-Until:
-
-new I/O arrives
-OR
-timer expires
+    This is the heart of the event loop.
+    Poll phase handles:
+    network I/O
+    file system callbacks
+    database responses
+   Example: fs.readFile("file.txt", callback);
+   Flow:
+   OS performs file read
+    ↓
+   callback queued in poll phase
+    ↓
+  event loop executes callback
+  Poll Phase Behavior
+  Poll does two things:
+  1️⃣ Execute I/O callbacks
+  execute queued I/O callbacks
+  2️⃣ Wait for new events
+  If nothing is ready:
+  event loop sleeps
+  Until:
+  new I/O arrives
+   OR
+  timer expires
 Phase 5 — Check Phase
-
-Runs callbacks from:
-
-setImmediate()
-
-Example:
-
-setImmediate(() => console.log("immediate"));
-
-Executed after poll phase completes.
+  Runs callbacks from:
+  setImmediate()
+  Example:setImmediate(() => console.log("immediate"));
+  Executed after poll phase completes.
 
 Phase 6 — Close Callbacks
-
-Handles resource cleanup.
-
-Examples:
-
-socket.on('close')
-server.close()
-
-Example:
-
-socket.on("close", () => {
+  Handles resource cleanup.
+  Examples: socket.on('close') server.close()
+  Example: socket.on("close", () => {
    console.log("socket closed");
-});
+    });
 Microtasks (Important FAANG Detail)
 Microtasks are not a phase but run between phases.
 Types:
@@ -769,7 +722,6 @@ Promise.resolve().then(() => console.log("promise"));
 Output:
 promise
 timer
-
 Because microtasks run before next loop phase.
 
 Full Execution Example
@@ -886,17 +838,12 @@ Immediate
 Why?
 
 Order is not guaranteed because:
-
 setTimeout runs in Timers phase
-
 setImmediate runs in Check phase
-
 Depends on event loop timing.
-
 4. nextTick inside Promise
 Promise.resolve().then(() => {
   console.log("Promise");
-
   process.nextTick(() => {
     console.log("nextTick");
   });
@@ -909,13 +856,11 @@ nextTick is queued and executed after the current microtask finishes.
 
 5. Nested Promises
 console.log("Start");
-
 Promise.resolve().then(() => {
   console.log("P1");
   }).then(() => {
   console.log("P2");
   });
-
 console.log("End");
 Output
 Start
@@ -949,9 +894,7 @@ async function test() {
   console.log("2");
 }
 console.log("3");
-
 test();
-
 console.log("4");
 Output
 3
@@ -997,16 +940,13 @@ nextTick
 Promise
 Timeout / Immediate (order not guaranteed)
 Node.js Event Loop Phases (Important for Interviews)
-
 The Node.js event loop runs in phases:
-
-1️⃣ Timers
-2️⃣ Pending Callbacks
-3️⃣ Idle / Prepare
-4️⃣ Poll (I/O)
-5️⃣ Check (setImmediate)
-6️⃣ Close Callbacks
-
+   1️⃣ Timers
+   2️⃣ Pending Callbacks
+   3️⃣ Idle / Prepare
+   4️⃣ Poll (I/O)
+   5️⃣ Check (setImmediate)
+   6️⃣ Close Callbacks
 Priority queues:
 process.nextTick queue
 ↓
