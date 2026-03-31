@@ -1,0 +1,891 @@
+Node.js is single-threaded (main thread)
+  BUT some tasks are too slow / blocking:
+  File system (fs.readFile)
+  Crypto (bcrypt, hashing)
+  DNS lookup
+  Compression (zlib)
+  If Node did these on main thread → everything freezes
+
+Imagine: You = Restaurant Manager (Event Loop)
+               Customers = Requests
+               Kitchen Staff = Thread Pool Workers
+               If YOU cook everything yourself → long queue 
+               Instead, you delegate heavy cooking to staff
+               You take orders (event loop)
+               Workers cook (thread pool)
+               You serve when ready (callback queue)
+               This = EXACT Node.js model
+
+
+2. What is libuv? libuv = the engine behind Node.js async behavior
+    It provides:Event Loop, Thread Pool, Async I/O handling
+
+
+3.What is Thread Pool?👉 Thread Pool = fixed number of worker threads (default = 4)
+    These threads:Run blocking tasks in background Prevent main thread from blocking 
+    In Node.js, the thread pool is a collection of background C++ worker threads, managed by the underlying libuv library,
+    used to offload time-consuming and blocking system tasks (like file I/O or cryptography) from the main, single JavaScript Thread
+
+4. Flow: What Actually Happens Internally
+  Let’s take:
+  fs.readFile("big.txt", callback);
+  Step-by-step:   JS calls fs.readFile
+                  Node sees → blocking task
+                  Sends to libuv thread pool
+                  One worker thread picks it
+                  Reads file
+                  Pushes result to callback queue
+                  Event loop executes callback
+                  
+
+Main Thread (Event Loop)
+        |
+        |----> Thread Pool (4 workers)
+                     |
+               [Task executed]
+                     |
+        <---- Callback Queue   
+        Node.js is single-threaded for JS execution, but uses a multi-threaded thread pool via libuv for handling blocking I/O tasks.               
+
+
+5. Default Size of Thread Pool
+     👉 Default = 4 threads
+     You can change:  UV_THREADPOOL_SIZE=8 node app.js
+
+
+6. Important: Which APIs Use Thread Pool?
+     Uses Thread Pool:
+     fs (file system)
+     crypto (bcrypt, pbkdf2)
+     zlib (compression)
+     dns.lookup (sometimes)
+     ❌ DOES NOT use Thread Pool:
+     HTTP requests
+     setTimeout
+     DB calls (handled by OS/network)
+     👉 These use OS async I/O (epoll, kqueue)
+
+7. Biggest Mistake Candidates Make
+     “All async operations use thread pool”
+     WRONG-Only blocking operations fallback to thread pool
+
+8. Deep Insight: Why Only 4 Threads?
+     Because:Too many threads = context switching overhead
+     Memory overhead increases
+     👉 Node keeps it small → efficient
+9. What Happens When Thread Pool is Full?
+      Scenario:4 threads busy + 5th task arrives
+      👉 It goes into queue (FIFO)
+      👉 waits until a thread is free
+      for (let i = 0; i < 10; i++) {
+        crypto.pbkdf2(...)
+       }
+       only 4 run in parallel 
+       rest wait -> performance bottleneck
+
+10. Advanced Concept - starvation
+      if long tasks occupy thread pool
+      short tasks get delayed 
+      it is called thread pool starvation
+
+11. How to solve starvation
+     increase thread pool Size
+     offload to worker thread
+     use streaming Instead of heavy operations      
+
+12. Thread Pool vs Worker Threads (VERY IMPORTANT)
+| Feature    | Thread Pool | Worker Threads  |
+| ---------- | ----------- | --------------- |
+| Managed by | libuv       | JS API          |
+| Control    | No          | Yes             |
+| Use case   | I/O         | CPU-heavy tasks |
+| Threads    | Fixed       | You create      |
+         👉 Thread pool = hidden
+         👉 Worker threads = explicit parallelism     
+
+13. When Should You Use Worker Threads?
+    If:CPU-heavy tasks
+    Large computations\
+    ML / data processing
+    👉 Thread pool is NOT enough         
+
+
+14. Advanced Flow
+JS Code
+  |
+Event Loop
+  |
+  |---- Non-blocking → OS
+  |
+  |---- Blocking → Thread Pool (libuv)
+  |
+Callback Queue → Event Loop → Execution
+
+15. Super Important Interview Insight
+     👉 Node.js achieves scalability not by threads
+     👉 but by non-blocking + delegation
+
+16. QUES
+      Why does Node.js need a thread pool?
+         To handle blocking operations without blocking event loop.
+      Is Node.js truly single-threaded?
+         JS execution is single-threaded
+         but internally uses multi-threading via libuv
+      What happens if thread pool size is small?
+         Tasks queue up → performance degradation
+      Can increasing thread pool always improve performance?
+         No
+         Too many threads → overhead
+         Context switching increases
+       Why don’t HTTP requests use thread pool?
+          Because OS handles them asynchronously (epoll/kqueue)
+        What is thread pool starvation?
+         Long tasks blocking all threads → short tasks delayed
+        How is thread pool different from event loop?
+         Event loop = scheduler
+         Thread pool = executor 
+        What is UV_THREADPOOL_SIZE max?
+          👉 Max = 128 
+        Event loop delegates heavy work to a fixed set of workers (thread pool) and keeps itself free.  
+        API handling image compression:
+           Without thread pool → server freezes
+           With thread pool → smooth handling
+           With worker threads → even better scalability
+        
+        
+        
+        
+        libuv thread pool is NOT magic- 
+           Internally it is just: A task queue
+                                  A set of worker threads
+                                  A loop where threads pick tasks   
+                    Real-Life Analogy (Never Forget)
+                    Imagine: A kitchen order board (queue)
+                    4 chefs (threads)
+                    Orders (tasks)
+                    👉 Chef finishes one dish → looks at board → picks next
+                    👉 No chef owns a fixed order → any free chef picks next job
+                    That’s exactly how libuv work
+
+
+
+17. libuv internals
+       1.libuv thread pool is not magic internally it is just
+          a task queue
+          a set of worker Threads
+          a loop where threads pick tasks
+
+
+     2.Core pieces: 1. Work Queue
+                  2. Worker Threads(default 4)
+                  3.Condition Variable(wake/sleep mechanism)
+                  4.Mutex(lock for safe access)     
+
+
+    3.How Tasks Enter the thread Pool 
+      when we do 
+            crypto.pbkdf2(...) #crypto.pbkdf2 is not just hashing—it’s secure password hashing designed to resist attacks by being slow and salted.
+      
+      internally - nodejs creates a work requests(uv_work_t)
+      Pushes it into global queue
+    
+    
+    4.Internal Flow - 
+       step 1- task submission
+            JS -> libuv -> enqueue(task)
+            task added to shared queue              
+       step 2- worker thread loop
+            each thread runs something like
+            while (true) {
+              lock(queue)
+              if (queue empty) wait()
+              task = dequeue()
+              unlock(queue)
+              execute(task)
+              push result → completion queue
+            }
+    
+    *Threads are always running in loop
+    *they dont get assigned tasks they pull tasks
+
+    5.HOW THREDS PICK Tasks
+       model = pull based (not push based)
+       -thread becomes free
+       -it checks queue
+       -takes next available task
+       this avoid complexity of scheduling
+
+
+    6.Is there work stealing?
+      no true work stealing like java ForkJoinPool
+      why bcz there is only one global queue
+          no per thread queue
+        so what happens all threads pull from same queue 
+        so no stealing needed ,simpler design,less overhead  
+    
+    
+    Does libuv use work stealing?
+      “No, libuv uses a shared global queue where all worker threads pull tasks. It does not implement work stealing like advanced thread pools.
+
+    7.Queue Types
+      FIFO (first come first serve)
+      Long tasks can block queue = unfairness
+
+    8.Starvation (Deep Understanding) 
+       Scenario: crypto.pbkdf2 (very heavy)
+       4 tasks running
+       Then:
+       fs.readFile (light task)
+       👉 It waits 😬
+       Because:Queue is FIFO
+       Threads busy
+       Insight
+       libuv prioritizes simplicity over fairness  
+
+    9.Completion Phase (VERY IMPORTANT)
+       after thread finishes
+        it does not execute callback
+        Instead: 1. push result into completion queue
+                 2. event loop picks it
+                 3. callback executed in main thread
+        Worker threads only execute tasks, but callbacks always run on the event loop thread.
+    
+    10.Internal Data Structure
+         each task: struct uv_work_t {
+         void (*work)(uv_work_t* req);
+         void (*after_work)(uv_work_t* req, int status);
+         }
+         work - runs in thread
+         after_work - runs in event loop 
+
+    11. Thread Lifecycle
+       thread- created at startup
+       always alive
+       sleep when idle
+       wake when new task arrives
+
+    12.How Thread sleep/wake
+        uses condition Variables
+        flow - 1.Queue empty -> thread sleeps
+               2.new task signal thread
+               3.thread wakes -> picks task          
+
+    🔥 13. Performance Insight
+
+Why this design is fast:
+
+No thread creation overhead
+No complex scheduling
+Minimal locking
+⚠️ 14. Bottleneck Point
+
+👉 Single queue = contention point
+
+If many tasks:
+
+Lock contention increases
+Queue becomes bottleneck
+🚀 15. Why Not Multiple Queues?
+
+Because:
+
+Simpler design
+Node focuses on I/O, not CPU parallelism
+
+👉 For CPU → use Worker Threads
+
+🎯 16. FAANG-Level Questions (Real Ones)
+❓ Q1: How does libuv assign tasks to threads?
+
+👉 Threads pull tasks from shared queue (not pushed)
+
+❓ Q2: Does libuv use work stealing?
+
+👉 No, single shared queue → no stealing needed
+
+❓ Q3: Where do callbacks execute?
+
+👉 Always on event loop (main thread)
+
+❓ Q4: What is biggest limitation of libuv thread pool?
+
+👉 Single queue → contention + starvation
+
+❓ Q5: Why not increase thread pool infinitely?
+
+👉 Context switching + memory overhead
+
+❓ Q6: What happens if all threads are busy?
+
+👉 Tasks queue up (FIFO)
+
+❓ Q7: Can two threads execute same task?
+
+👉 No, each task is picked by one thread
+
+🧠 17. Ultimate Mental Model
+
+👉 Think like this:
+
+[ JS ]
+   ↓
+[ Event Loop ]
+   ↓
+[ Queue ]  ← all tasks here
+   ↓
+[ Thread 1 ]
+[ Thread 2 ]
+[ Thread 3 ]
+[ Thread 4 ]
+   ↓
+[ Completion Queue ]
+   ↓
+[ Event Loop → Callback ]
+🔥 18. One-Line Killer Summary
+
+👉 “libuv uses a shared FIFO queue with worker threads pulling tasks, and all callbacks are executed back on the event loop thread.”           
+🧵 PART 1: Mini Thread Pool in Node (Worker Threads)
+
+👉 We’ll use Node’s Worker Threads (since JS can’t access libuv pool directly)
+
+👉 Worker Threads lets us simulate a real thread pool
+
+🧠 Goal
+
+We want:
+
+Fixed number of workers
+Queue of tasks
+Workers pick tasks when free
+🏗️ Step 1: Worker File
+// worker.js
+const { parentPort } = require('worker_threads');
+
+parentPort.on('message', (task) => {
+  const result = task(); // execute task
+  parentPort.postMessage(result);
+});
+🏗️ Step 2: Thread Pool Implementation
+// threadPool.js
+const { Worker } = require('worker_threads');
+
+class ThreadPool {
+  constructor(size) {
+    this.size = size;
+    this.workers = [];
+    this.queue = [];
+    this.freeWorkers = [];
+
+    for (let i = 0; i < size; i++) {
+      const worker = new Worker('./worker.js');
+
+      worker.on('message', (result) => {
+        worker.busy = false;
+        this.freeWorkers.push(worker);
+
+        if (this.queue.length > 0) {
+          const task = this.queue.shift();
+          this.runTask(task);
+        }
+      });
+
+      worker.busy = false;
+      this.workers.push(worker);
+      this.freeWorkers.push(worker);
+    }
+  }
+
+  runTask(task) {
+    if (this.freeWorkers.length > 0) {
+      const worker = this.freeWorkers.pop();
+      worker.busy = true;
+      worker.postMessage(task);
+    } else {
+      this.queue.push(task);
+    }
+  }
+}
+
+module.exports = ThreadPool;
+🏗️ Step 3: Usage
+const ThreadPool = require('./threadPool');
+
+const pool = new ThreadPool(4);
+
+for (let i = 0; i < 10; i++) {
+  pool.runTask(() => {
+    let sum = 0;
+    for (let j = 0; j < 1e9; j++) sum += j;
+    return sum;
+  });
+}
+⚠️ Interview Insight
+
+👉 This mimics libuv:
+
+Concept	Your Code	libuv
+Queue	this.queue	global queue
+Workers	Worker Threads	libuv threads
+Free workers	freeWorkers	idle threads
+Execution	runTask	worker loop
+💣 Important Catch (INTERVIEW TRAP)
+
+👉 Passing functions like this won’t work in real Node (serialization issue)
+
+Better approach:
+
+worker.postMessage({ number: i });
+
+👉 Worker executes logic
+
+🧠 PART 2: HARD FAANG DEBUGGING QUESTION
+💣 Problem Statement
+
+You have this API:
+
+app.get('/hash', async (req, res) => {
+  const crypto = require('crypto');
+
+  crypto.pbkdf2('password', 'salt', 100000, 512, 'sha512', () => {
+    res.send('done');
+  });
+});
+🔥 Symptoms
+Works fine locally
+In production:
+Requests become slow
+Some requests hang
+🧠 Question
+
+👉 What’s happening?
+
+💥 Root Cause
+
+👉 libuv thread pool starvation
+
+⚙️ Breakdown
+pbkdf2 uses thread pool
+Default threads = 4
+
+If:
+
+100 requests hit /hash
+
+👉 Only 4 execute
+👉 96 waiting in queue 😬
+
+🎯 Result
+Requests delayed
+Timeout possible
+Server “feels slow”
+🧠 Interview Answer (PERFECT)
+
+👉 “pbkdf2 is CPU-intensive and uses libuv thread pool. Since the pool size is limited (default 4), concurrent requests cause queue buildup, leading to thread pool starvation and increased latency.”
+
+🚀 Fixes (Expected in Interview)
+✅ Fix 1: Increase Thread Pool
+UV_THREADPOOL_SIZE=16 node app.js
+
+👉 Helps but not perfect
+
+✅ Fix 2: Use Worker Threads (BEST)
+
+👉 Offload CPU work
+
+new Worker('./hashWorker.js');
+✅ Fix 3: Scale Horizontally
+Multiple Node processes (cluster)
+Load balancing
+❌ Bad Fix
+
+👉 “Make function async/await”
+
+💀 Doesn’t help (still uses same thread pool)
+
+🔥 Advanced Twist (FAANG Level 2)
+❓ Follow-up Question
+
+👉 Why does increasing thread pool not always help?
+
+💣 Answer
+Context switching overhead
+CPU contention
+Memory usage increases
+🧠 FINAL MENTAL MODEL
+
+👉 Think:
+
+CPU-heavy task + many requests
+          ↓
+Thread pool (4 threads)
+          ↓
+Queue builds up
+          ↓
+Latency increases
+🎯 One-Line Killer Answer
+
+👉 “Thread pool starvation happens when CPU-bound tasks occupy limited worker threads, causing queued tasks to wait and increasing latency.”
+
+Let’s design a Node.js server that can handle ~10k req/sec without getting killed by libuv thread pool bottlenecks.
+
+🧠 1. First Principle (MOST IMPORTANT)
+
+👉 Node.js scales well only if you avoid blocking work
+
+💣 Bottleneck = libuv thread pool
+
+So design rule:
+
+“Keep thread pool free → push heavy work elsewhere.”
+
+🚨 2. What BREAKS at 10k req/sec
+
+If your API does this:
+
+crypto.pbkdf2(...)
+fs.readFileSync(...)
+zlib.gzip(...)
+
+👉 You’re DEAD ❌
+
+Why?
+
+Only 4 threads
+Queue builds
+Latency explodes
+🏗️ 3. High-Level Architecture (Correct Design)
+Client (10k req/sec)
+        ↓
+Load Balancer
+        ↓
+Multiple Node.js Instances (Cluster)
+        ↓
+   ┌───────────────┬───────────────┐
+   ↓               ↓               ↓
+Non-blocking I/O   Worker Threads   External Services
+(DB, HTTP)         (CPU tasks)      (Redis, Queue)
+⚙️ 4. Layer-by-Layer Design
+🧩 A. Node.js App (Keep it Thin)
+
+👉 Only do:
+
+Routing
+Validation
+Async calls
+app.get('/user', async (req, res) => {
+  const data = await db.getUser(req.query.id); // async
+  res.json(data);
+});
+
+👉 No CPU work here ❌
+
+🧩 B. Avoid Thread Pool Completely for Hot Path
+❌ DON’T:
+bcrypt in request
+large file compression
+heavy crypto
+🧩 C. Offload CPU Work
+
+Use:
+
+👉 Worker Threads
+
+const worker = new Worker('./worker.js');
+
+👉 Dedicated threads (not shared like libuv)
+
+🧩 D. Use Async I/O (REAL SCALING POWER)
+
+Node shines when using:
+
+DB queries (async)
+HTTP calls
+streaming
+
+👉 These use OS (epoll/kqueue), not thread pool
+
+🧩 E. Use Caching Layer (CRITICAL)
+
+👉 Add Redis
+
+Flow:
+
+Request → Check Cache → DB → Cache → Response
+
+👉 Reduces load massively
+
+🧩 F. Use Queue for Heavy Tasks
+
+👉 Don’t process inside request
+
+Use:
+
+BullMQ / Kafka / RabbitMQ
+Request → enqueue job → respond fast
+Worker → process later
+🚀 5. Scaling Strategy
+🔥 A. Use Cluster (Multi-core)
+const cluster = require('cluster');
+
+👉 Run 1 process per CPU core
+
+🔥 B. Horizontal Scaling
+Multiple servers
+Load balancer (NGINX / AWS ALB)
+⚡ 6. Example: BAD vs GOOD
+❌ BAD (Thread Pool Killer)
+app.get('/login', async (req, res) => {
+  const hash = await bcrypt.hash(password, 10);
+  res.send(hash);
+});
+
+💣 Thread pool overload
+
+✅ GOOD
+app.get('/login', async (req, res) => {
+  queue.add('hash-job', { password });
+  res.send('processing');
+});
+🧠 7. Advanced Optimizations (FAANG LEVEL)
+⚡ A. Streaming Instead of Buffering
+fs.createReadStream(file).pipe(res);
+
+👉 No memory pressure
+👉 No thread pool blocking
+
+⚡ B. Backpressure Handling
+
+👉 Don’t overload system
+
+if (queue.length > LIMIT) {
+  return res.status(503).send('Server busy');
+}
+⚡ C. Connection Reuse
+HTTP keep-alive
+DB pooling
+⚡ D. Rate Limiting
+
+👉 Protect system
+
+💣 8. Hidden Bottlenecks (Interview Gold)
+❗ 1. DNS lookup → thread pool
+❗ 2. fs operations → thread pool
+❗ 3. crypto → thread pool
+
+👉 Even small misuse = huge impact at scale
+
+🎯 9. FAANG Interview Answer (PERFECT STRUCTURE)
+
+If asked:
+
+👉 “Design Node server for 10k req/sec”
+
+Say:
+
+Step 1: Keep event loop non-blocking
+Avoid CPU work
+Use async I/O
+Step 2: Offload heavy work
+Worker Threads
+Job queues
+Step 3: Scale horizontally
+Cluster (multi-core)
+Load balancer
+Step 4: Add caching
+Redis
+Step 5: Optimize I/O
+Streaming
+Connection pooling
+Step 6: Protect system
+Rate limiting
+Backpressure
+🧠 10. One-Line Killer Summary
+
+👉 “To handle 10k req/sec, keep the event loop free by avoiding thread pool work, offload CPU tasks, and scale horizontally.”
+
+🔥 11. Real FAANG Follow-up Questions
+❓ Q1: What if thread pool becomes bottleneck?
+
+👉 Move work to Worker Threads / external services
+
+❓ Q2: Why Node is good for high RPS?
+
+👉 Non-blocking I/O + event loop
+
+❓ Q3: When Node is bad?
+
+👉 CPU-heavy workloads
+
+❓ Q4: How to monitor bottlenecks?
+Event loop lag
+Thread pool usage
+CPU usage
+🚀 Final Insight
+
+👉 Node.js is NOT fast because of threads
+👉 It’s fast because it avoids needing them
+🧠 🔥 1. Trick Question: “Is Node.js really single-threaded?”
+
+👉 Expected answer:
+
+“JavaScript execution is single-threaded, but Node.js internally uses multi-threading via libuv (thread pool) and OS async I/O.”
+
+💣 Trap: Saying just “yes” or “no”
+
+💣 2. “Why does async code not always scale?”
+
+👉 Example:
+
+crypto.pbkdf2(...)
+
+👉 Answer:
+
+“Because some async APIs use thread pool. If tasks are CPU-heavy, they saturate limited threads, causing queue buildup and latency.”
+
+⚡ 3. “Which async operations do NOT use thread pool?”
+
+👉 Expected:
+
+HTTP requests
+DB calls
+setTimeout
+
+👉 They use OS-level async I/O
+
+💣 Many candidates get this WRONG
+
+🔥 4. “What happens if I increase UV_THREADPOOL_SIZE to 100?”
+
+👉 Expected:
+
+“It may improve concurrency for blocking tasks but can degrade performance due to context switching, CPU contention, and memory overhead.”
+
+🧠 5. “Why callbacks are executed in main thread, not worker threads?”
+
+👉 Expected:
+
+“To maintain single-threaded JS model and avoid race conditions.”
+
+💣 6. “Can thread pool execute JS code?”
+
+👉 ❌ NO
+
+👉 It executes C++ bindings (native code)
+
+💥 This is a killer differentiation answer
+
+⚡ 7. “Why fs.readFile uses thread pool but HTTP doesn’t?”
+
+👉 Expected:
+
+“File system APIs are blocking at OS level, so libuv uses thread pool. Network I/O is non-blocking via OS mechanisms like epoll/kqueue.”
+
+🔥 8. Debug Question (VERY COMMON)
+
+👉 “My Node app is slow even though everything is async. Why?”
+
+👉 Expected thinking:
+
+Thread pool saturation?
+CPU-heavy tasks?
+Event loop blocking?
+Large JSON parsing?
+💣 9. “What is event loop lag?”
+
+👉 Expected:
+
+“Delay in event loop execution caused by blocking operations.”
+
+👉 Bonus:
+
+const start = Date.now();
+setTimeout(() => console.log(Date.now() - start), 0);
+⚡ 10. “Difference: concurrency vs parallelism in Node?”
+
+👉 Expected:
+
+Concurrency → event loop handling multiple tasks
+Parallelism → worker threads / thread pool
+🔥 11. “Why Node is bad for CPU-heavy tasks?”
+
+👉 Expected:
+
+“Because CPU tasks block thread pool or event loop, limiting scalability.”
+
+💣 12. “What is the biggest limitation of libuv thread pool?”
+
+👉 Expected:
+
+“Single shared queue + fixed number of threads → contention and starvation.”
+
+🧠 13. “How does libuv ensure fairness?”
+
+👉 Expected:
+
+“It doesn’t guarantee fairness; FIFO queue can still lead to starvation.”
+
+💥 This answer impresses a LOT
+
+⚡ 14. “Can two requests run in parallel in Node?”
+
+👉 Expected:
+
+“Yes, via async I/O or worker threads, but JS execution remains single-threaded.”
+
+💣 15. “Why using sync APIs is dangerous?”
+fs.readFileSync(...)
+
+👉 Expected:
+
+“Blocks event loop → all requests stop”
+
+🔥 16. “What happens internally when thread finishes task?”
+
+👉 Expected:
+
+Push result to completion queue
+Event loop executes callback
+⚡ 17. “How would you detect thread pool bottleneck in production?”
+
+👉 Expected:
+
+High latency
+CPU idle but requests slow
+Event loop fine but tasks delayed
+💣 18. “Why not use thread pool for everything?”
+
+👉 Expected:
+
+“Limited threads, overhead, not scalable for high concurrency.”
+
+🧠 19. “Difference: setImmediate vs setTimeout vs thread pool?”
+
+👉 Expected:
+
+setTimeout → timers phase
+setImmediate → check phase
+thread pool → background execution
+🔥 20. “What happens under heavy load (10k req)?”
+
+👉 Expected:
+
+Thread pool saturates
+Queue builds
+Latency spikes
+Possible timeouts
+🚀 FINAL: What Interviewer Is REALLY Testing
+
+They don’t care if you memorize.
+
+They check if you understand:
+
+✅ Can you reason about performance?
+✅ Can you debug real systems?
+✅ Can you explain trade-offs?
+🧠 FINAL KILLER ANSWER (Use Anywhere)
+
+👉 If stuck, say:
+
+“I’d check whether the issue is event loop blocking or thread pool saturation, since both can degrade performance differently in Node.js.”
+
+💥 This line alone = strong signal
