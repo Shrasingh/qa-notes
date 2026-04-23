@@ -7,7 +7,7 @@
           waiter does instantly
           slow task delegated
           cooking pasta = time consuming
-          water sends it to check (worker thread)
+          waiter sends it to check (worker thread)
           waiter keeps working - while pasta is cooking serves other customers takens new orders
           chef finishes - notifies waiter  pasta is ready
           waiter serves result delivers pasta to customers
@@ -19,12 +19,12 @@
           Node.js uses a single-threaded event loop that continuously checks the call stack and callback queues, executing synchronous code first,
           then microtasks, and then macrotasks, while delegating heavy operations to worker threads via libuv.
 1.Node.js is a JavaScript runtime built on Chrome’s V8 engine that allows JavaScript to run on the server side.
-It uses
-Event-driven architecture
-Non-blocking I/O
-Single-threaded event loop
-This makes it highly scalable for I/O-heavy applications.
-Real World Example
+  It uses
+  Event-driven architecture
+  Non-blocking I/O
+  Single-threaded event loop
+  This makes it highly scalable for I/O-heavy applications.
+  Real World Example
 Think of a restaurant with one waiter.
 Traditional servers (Java, PHP old models)
 1 waiter handles 1 table at a time.
@@ -43,9 +43,9 @@ Why Node.js is good for scalable systems?
     Lightweight:
     Single-threaded architecture
 Node.js uses one main thread instead of creating many threads, which reduces memory usage.
-Non-blocking I/O
-It performs tasks asynchronously, so it doesn't wait for operations to finish.
-Event-driven model
+    Non-blocking I/O
+    It performs tasks asynchronously, so it doesn't wait for operations to finish.
+    Event-driven model
 Uses an event loop to handle multiple requests efficiently.
 Efficient memory usage
 Because it avoids multiple threads, it consumes less RAM.
@@ -90,14 +90,13 @@ Output
 Start
 End
 file content
-Why?
-Because file reading is asynchronous.
-FAANG Interview Question
+ Why?Because file reading is asynchronous.
+
 Why Node.js is single threaded but still scalable?
-Answer:
-Because heavy operations are delegated to libuv thread pool, while the event loop manages callbacks asynchronously.
-nodejs prefers non blocking i/o to avoid thread blocking and allow handling multple concurrent requests.
-nodejs module: 
+ Answer:
+ Because heavy operations are delegated to libuv thread pool, while the event loop manages callbacks asynchronously.
+ nodejs prefers non blocking i/o to avoid thread blocking and allow handling multple concurrent requests.
+ nodejs module: 
       core module ex fs,os 
       local module ex utils
       third party module ex mongoose
@@ -121,30 +120,30 @@ async programming
     2. Promises
     A promise is an object that represents the future result of an asynchronous operation, which can be resolved (success) or rejected (error).
     Example - You order pizza → get a token/receipt
-That receipt = Promise
-Kitchen preparing food = async operation
-When ready:
-You get pizza → resolved
-Restaurant cancels → rejected
+  That receipt = Promise
+  Kitchen preparing food = async operation
+  When ready:
+  You get pizza → resolved
+  Restaurant cancels → rejected
 
-👉 Key point:
-You don’t stand in the kitchen waiting. You hold a reference to something that will complete later.
+
+  You don’t stand in the kitchen waiting. You hold a reference to something that will complete later.
     3. Async/Await - Async/Await is a modern syntax that allows writing asynchronous code in a synchronous-looking way, making it easier to read and manage promises.   
-Callback Example
-fs.readFile("file.txt", (err,data)=>{
-console.log(data)
-})
-Problem
-callback hell
-Promise Example
-readFile()
-.then(data=>console.log(data))
-.catch(err=>console.log(err))
-Async Await
-Modern approach.
-async function read() {
-  cons data = await readFile()
-}
+   Callback Example
+   fs.readFile("file.txt", (err,data)=>{
+     console.log(data)
+    })
+  Problem
+  callback hell
+  Promise Example
+  readFile()
+   .then(data=>console.log(data))
+   .catch(err=>console.log(err))
+  Async Await
+   Modern approach.
+  async function read() {
+    cons data = await readFile()
+    }
 7. Event Loop (FAANG Favorite)
     Event loop manages async operations.
     Phases
@@ -195,7 +194,7 @@ This does NOT guarantee exact execution after 2000ms.
 Instead it means:
 "Execute the callback after at least 2000ms when the event loop reaches the timer phase."
 
-2️⃣ Why the Timer Phase Exists
+  2️⃣ Why the Timer Phase Exists
 
 JavaScript in Node.js is single-threaded, but Node.js needs to handle many asynchronous operations like:
 HTTP requests
@@ -216,42 +215,25 @@ setTimeout(() => {
   console.log("done")
 }, 2000)
 Node.js continues doing other work while waiting.
-3️⃣ How the Timer Phase Works Internally
-Internally Node.js uses libuv.
-libuv implements the event loop and timers system.
-Internal Timer Process
+3️⃣How the Timer Phase Works Internally
+    Internally Node.js uses libuv.
+    libuv implements the event loop and timers system.
+    Internal Timer Process
 1️⃣ User schedules a timer
 setTimeout(callback, delay)
 
 2️⃣ Node registers the timer in libuv timer queue
 
-3️⃣ The timer stores:
+  3️⃣ The timer stores:
+    callback function delay time start time
 
-callback function
-
-delay time
-
-start time
-
-4️⃣ When the event loop reaches the Timer phase:
-Node checks:
-
-Has the timer delay expired?
-
-If YES → callback moves to execution queue.
-
-If NO → wait for next loop.
-
-4️⃣ Components of the Timer Phase
-
-The Timer phase contains several internal structures.
-
-1️⃣ Timer Queue
-A queue of scheduled timers.
-Each timer has:
-expiration time
-callback
-repeat flag (for interval)
+  4️⃣ When the event loop reaches the Timer phase:
+          Node checks:Has the timer delay expired?
+          If YES → callback moves to execution queue.
+          If NO → wait for next loop.
+  4️⃣ Components of the Timer Phase The Timer phase contains several internal structures.
+  1️⃣ Timer Queue A queue of scheduled timers.
+       Each timer has: expiration time,callback ,repeat flag (for interval)
 Example structure:
 Timer Queue
 Timer 1 → expires at 2000ms
@@ -268,28 +250,20 @@ Current: 1100ms
 → timer is ready.
 
 3️⃣ Callback Execution Queue
-
 When timers expire:
-
 Their callbacks move to the callback execution queue.
-
 Example:
-
 [callback1, callback2, callback3]
-
 These callbacks are executed in FIFO order.
 
-4️⃣ Repeat Timer Logic (for setInterval)
+ 4️⃣ Repeat Timer Logic (for setInterval)
+   For setInterval():
+   setInterval(() => {
+     console.log("tick");
+   }, 1000);
 
-For setInterval():
-
-setInterval(() => {
-  console.log("tick");
-}, 1000);
-
-After executing:
-
-Node re-registers the timer again with the same delay.
+  After executing:
+  Node re-registers the timer again with the same delay.
 
 Process:
 
@@ -298,68 +272,51 @@ execute callback
 calculate next expiration
 ↓
 push timer back to queue
-5️⃣ Execution Flow of the Timer Phase
-Example code:
-setTimeout(() => console.log("A"), 1000);
-setTimeout(() => console.log("B"), 500);
-setTimeout(() => console.log("C"), 1500);
-Timer registration
-Timer Queue
+  5️⃣Execution Flow of the Timer Phase
+    Example code:
+    setTimeout(() => console.log("A"), 1000);
+    setTimeout(() => console.log("B"), 500);
+    setTimeout(() => console.log("C"), 1500);
+    Timer registration
+    Timer Queue
 
-B → 500ms
-A → 1000ms
-C → 1500ms
-Event Loop iteration
-Loop 1
+    B → 500ms
+    A → 1000ms
+    C → 1500ms
+    Event Loop iteration
+    Loop 1
 
-Time = 400ms
+    Time = 400ms
+    No timers expired.
 
-No timers expired.
-
-Nothing executes.
-Loop 2
-Time = 600ms
-B expired
-Execution:
-B
-Loop 
-Time = 1100ms
-A expired
-Execution:
-A
-Loop 4
+  Nothing executes.
+  Loop 2
+  Time = 600ms
+  B expired
+  Execution:
+  B
+  Loop 
+  Time = 1100ms
+  A expired
+ Execution:
+ A
+ Loop 4
 Time = 1600ms
 C expired
 Execution:
 C
 6️⃣ Important Rule: Delay is Minimum, Not Exact
-
-Timers are not precise clocks.
-
-Example:
-
-setTimeout(() => console.log("Hello"), 0);
-
-You might think it runs immediately.
-
-But it actually means:
-
-Run in the next Timer phase when the call stack is empty.
-
-Example:
-
-setTimeout(() => console.log("timer"), 0);
-
-console.log("sync");
-
-Output:
-
-sync
-timer
+  Timers are not precise clocks.
+  Example:
+  setTimeout(() => console.log("Hello"), 0);
+  You might think it runs immediately.
+  But it actually means:
+  Run in the next Timer phase when the call stack is empty.
+  Example:setTimeout(() => console.log("timer"), 0);
+  console.log("sync");
+  Output:sync timer
 7️⃣ Interaction with Other Event Loop Phases
-
 The Timer phase interacts with other phases like:
-
 Phase	Purpose
 Timers	setTimeout / setInterval
 Pending callbacks	I/O callbacks
@@ -368,30 +325,30 @@ Poll	fetch new I/O
 Check	setImmediate
 Close callbacks	cleanup
 
-Flow:
-Timers
-↓
-Pending callbacks
-↓
-Idle / Prepare
-↓
-Poll
-↓
-Check
-↓
-Close
-Timers always run first in each loop iteration.
-8️⃣ Example Demonstrating Timer Phase Behavior
-const fs = require("fs");
-setTimeout(() => {
+  Flow:
+  Timers
+   ↓
+  Pending callbacks
+  ↓
+  Idle / Prepare
+  ↓
+  Poll
+  ↓
+  Check
+  ↓
+  Close
+  Timers always run first in each loop iteration.
+  8️⃣ Example Demonstrating Timer Phase Behavior
+  const fs = require("fs");
+  setTimeout(() => {
   console.log("timeout");
-}, 0);
-setImmediate(() => {
+  }, 0);
+  setImmediate(() => {
   console.log("immediate");
-});
-fs.readFile(__filename, () => {
+  });
+  fs.readFile(__filename, () => {
   console.log("file read");
-});
+    });
 
 Possible output:
 
@@ -745,202 +702,133 @@ Final Interview Summary
 If asked in FAANG interview:
 Node Event Loop Definition
 The Node.js event loop is a mechanism that allows JavaScript to perform non-blocking asynchronous operations by delegating tasks to the system kernel and processing callbacks in phases using the libuv library.
-Key Phases
+  Key Phases
 Timers
 Pending callbacks
 Idle/Prepare
 Poll
 Check
 Close
-Special Queues
-Microtask queue (Promises)
-nextTick queue
-Important Behaviors
-setTimeout → timers phase
-setImmediate → check phase
-Promises → microtask queue
-I/O → poll phase
+  Special Queues-Microtask queue (Promises)
+                 nextTick queue
+  Important Behaviors setTimeout → timers phase
+                      setImmediate → check phase
+                      Promises → microtask queue
+                      I/O → poll phase
 
 
 
 1. setTimeout vs Promise
-console.log("Start");
-
-setTimeout(() => {
-  console.log("Timeout");
-}, 0);
-
-Promise.resolve().then(() => {
-  console.log("Promise");
-});
-
-console.log("End");
-Output
-Start
-End
-Promise
-Timeout
-Why?
-
-Order of execution:
-
-Synchronous code runs first
-
-Microtasks (Promises)
-
-Macrotasks (setTimeout)
-
-Execution flow:
-
-Call Stack → Microtask Queue → Macrotask Queue
+      console.log("Start");
+      setTimeout(() => {
+        console.log("Timeout");
+      }, 0);
+      Promise.resolve().then(() => {
+        console.log("Promise");
+        });
+    console.log("End");
+    Output Start End Promise Timeout
+    Why? Order of execution: Synchronous code runs first,
+                             Microtasks (Promises)
+                             Macrotasks (setTimeout)
+                             Execution flow:
+                             Call Stack → Microtask Queue → Macrotask Queue
 2. process.nextTick vs Promise
-console.log("Start");
-
-process.nextTick(() => {
-  console.log("nextTick");
-});
-
-Promise.resolve().then(() => {
-  console.log("Promise");
-});
-
-console.log("End");
-Output
-Start
-End
-nextTick
-Promise
-Why?
-
-Priority in Node.js:
-
-1️⃣ process.nextTick
-2️⃣ Promise microtasks
-3️⃣ Timers
-
-process.nextTick runs before the microtask queue.
+    console.log("Start");
+    process.nextTick(() => {
+       console.log("nextTick");
+    });
+   Promise.resolve().then(() => {
+    console.log("Promise");
+   });
+   console.log("End");
+   Output Start End nextTick Promise
+   Why?Priority in Node.js:
+   1️⃣ process.nextTick
+   2️⃣ Promise microtasks
+   3️⃣ Timers
+   process.nextTick runs before the microtask queue.
 3. setImmediate vs setTimeout
-setImmediate(() => {
-  console.log("Immediate");
-});
-
-setTimeout(() => {
-  console.log("Timeout");
-}, 0);
-Possible Output
-Immediate
-Timeout
-
-OR
-
-Timeout
-Immediate
-Why?
-
-Order is not guaranteed because:
-setTimeout runs in Timers phase
-setImmediate runs in Check phase
-Depends on event loop timing.
-4. nextTick inside Promise
-Promise.resolve().then(() => {
-  console.log("Promise");
-  process.nextTick(() => {
-    console.log("nextTick");
-  });
-});
-Output
-Promise
-nextTick
-
-nextTick is queued and executed after the current microtask finishes.
+      setImmediate(() => {
+         console.log("Immediate");
+       });
+      setTimeout(() => {
+         console.log("Timeout");
+      }, 0);
+     Possible Output Immediate,Timeout
+     OR Timeout Immediate
+     Why? Order is not guaranteed because:
+     setTimeout runs in Timers phase
+     setImmediate runs in Check phase
+     Depends on event loop timing.
+4.nextTick inside Promise
+    Promise.resolve().then(() => {
+      console.log("Promise");
+      process.nextTick(() => {
+     console.log("nextTick");
+    });
+   });
+    Output Promise nextTick
+    nextTick is queued and executed after the current microtask finishes.
 
 5. Nested Promises
-console.log("Start");
-Promise.resolve().then(() => {
-  console.log("P1");
-  }).then(() => {
-  console.log("P2");
-  });
-console.log("End");
-Output
-Start
-End
-P1
-P2
-
-Because Promises chain in microtask queue.
+     console.log("Start");
+     Promise.resolve().then(() => {
+     console.log("P1");
+      }).then(() => {
+       console.log("P2");
+     });
+    console.log("End");
+   Output- Start,End,P1,P2
+   Because Promises chain in microtask queue.
 
 6. nextTick starvation problem
-function call() {
-  process.nextTick(call);
-}
+     function call() {
+       process.nextTick(call);
+     }
+     call();
+     setTimeout(() => {
+       console.log("Timeout");
+       }, 0);
+   Output
+    Timeout never executes
+    Why?process.nextTick keeps filling the nextTick queue, blocking the event loop.
 
-call();
-
-setTimeout(() => {
-  console.log("Timeout");
-}, 0);
-Output
-Timeout never executes
-
-Why?
-
-process.nextTick keeps filling the nextTick queue, blocking the event loop.
-
-7. Async/Await with Promise
-async function test() {
-  console.log("1");
-  await Promise.resolve();
-  console.log("2");
-}
-console.log("3");
-test();
-console.log("4");
-Output
-3
-1
-4
-2
-Why?
-await moves execution to the microtask queue.
+7.Async/Await with Promise
+    async function test() {
+       console.log("1");
+       await Promise.resolve();
+       console.log("2");
+    }
+   console.log("3");
+   test();
+   console.log("4");
+   Output-3 1 4 2
+   Why? await moves execution to the microtask queue.
 8. Multiple Timers
-setTimeout(() => console.log("A"), 0);
-setTimeout(() => console.log("B"), 0);
-Promise.resolve().then(() => console.log("C"));
-Output
-C
-A
-B
-Microtasks execute before timers.
-9. setImmediate inside I/O
-const fs = require("fs");
-fs.readFile(__filename, () => {
-  setTimeout(() => console.log("Timeout"), 0);
-  setImmediate(() => console.log("Immediate"));
-});
-Output
-Immediate
-Timeout
-Inside I/O callbacks, setImmediate always runs before setTimeout.
+     setTimeout(() => console.log("A"), 0);
+     setTimeout(() => console.log("B"), 0);
+     Promise.resolve().then(() => console.log("C"));
+     Output - C A B
+     Microtasks execute before timers.
+9.setImmediate inside I/O
+    const fs = require("fs");
+    fs.readFile(__filename, () => {
+      setTimeout(() => console.log("Timeout"), 0);
+      setImmediate(() => console.log("Immediate"));
+    });
+   Output- Immediate Timeout
+   Inside I/O callbacks, setImmediate always runs before setTimeout.
 10. Complex Event Loop Example
-console.log("Start");
-setTimeout(() => console.log("Timeout"), 0);
-
-setImmediate(() => console.log("Immediate"));
-
-Promise.resolve().then(() => console.log("Promise"));
-
-process.nextTick(() => console.log("nextTick"));
-
-console.log("End");
-Output
-Start
-End
-nextTick
-Promise
-Timeout / Immediate (order not guaranteed)
+     console.log("Start");
+     setTimeout(() => console.log("Timeout"), 0);
+     setImmediate(() => console.log("Immediate"));
+     Promise.resolve().then(() => console.log("Promise"));
+     process.nextTick(() => console.log("nextTick"));
+     console.log("End");
+     Output Start End nextTick Promise Timeout / Immediate (order not guaranteed)
 Node.js Event Loop Phases (Important for Interviews)
-The Node.js event loop runs in phases:
+    The Node.js event loop runs in phases:
    1️⃣ Timers
    2️⃣ Pending Callbacks
    3️⃣ Idle / Prepare
@@ -953,18 +841,15 @@ process.nextTick queue
 Microtask queue (Promises)
 ↓
 Event loop phases
-How Node.js Handles 100k Concurrent Requests With One Thread
-
-Node.js uses non-blocking I/O + event loop + OS async APIs.
-
-Step-by-step
-
-1️⃣ Request arrives → Event loop receives it
-2️⃣ If I/O needed → delegated to libuv thread pool / OS kernel
-3️⃣ Node.js does NOT wait
-4️⃣ Event loop continues processing other requests
-5️⃣ When I/O finishes → callback pushed to queue
-6️⃣ Event loop executes callback
+  How Node.js Handles 100k Concurrent Requests With One Thread
+  Node.js uses non-blocking I/O + event loop + OS async APIs.
+  Step-by-step
+  1️⃣ Request arrives → Event loop receives it
+  2️⃣ If I/O needed → delegated to libuv thread pool / OS kernel
+  3️⃣ Node.js does NOT wait
+  4️⃣ Event loop continues processing other requests
+  5️⃣ When I/O finishes → callback pushed to queue
+  6️⃣ Event loop executes callback
 
 Architecture
 Client Requests

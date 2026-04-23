@@ -1,0 +1,175 @@
+1.What JavaScript really is
+    Single-threaded
+    Event-driven
+    Non-blocking (async)
+    “JavaScript uses an event loop to handle concurrency despite being single-threaded
+    Interpreted, dynamically typed language
+    Runs on engine like: V8 Engine, Node.js
+2.Variables & Scope    
+    Difference between var, let, const
+    Scope: function vs block
+    Hoisting behavior
+    | Keyword | Scope    | Hoisted       | Reassign |
+    | ------- | -------- | ------------- | -------- |
+    | var     | function | ✅ (undefined) | ✅        |
+    | let     | block    | ❌ (TDZ)       | ✅        |
+    | const   | block    | ❌ (TDZ)       | ❌        |
+    console.log(a);
+    var a = 10; //Answer: undefined
+    console.log(b);
+    let b = 10; //Answer: ReferenceError (TDZ)
+3.EXECUTION CONTEXT
+    JavaScript has:Call Stack,Memory Heap
+    Execution Phases - 1. Creation Phase
+                           Variables → memory 
+                           allocated Functions → stored fully
+                        2. Execution Phase Code runs line by line
+        question - var x = 1;
+                   function test() {
+                    console.log(x);
+                     var x = 2;
+                     }
+                    test(); // output - local x is hoisted ->undefined shadows global
+4.What is Closure? Function + its lexical scope  
+    function outer() {
+        let count = 0;
+        return function inner() {
+        count++;
+        console.log(count);
+    };
+   }
+   const fn = outer();
+   fn(); // 1
+   fn(); // 2
+   Like: A locker (function), Stores secret (count),Even after leaving → access retained
+   Why closures are used?✅ Answer:Data hiding
+                                   State management
+                                   Memoization
+                                   A closure is a function that remembers and can access variables from its outer scope even after the outer function has finished executing.
+5.ASYNC JS- js is single threaded but handles async using 
+     callback queue,event loop
+     event loop flow-> callstack ->empty ? take from queue -> execute
+     console.log("start");
+     setTimeout(() => console.log("timeout"), 0);
+     Promise.resolve().then(() => console.log("promise"));
+     console.log("end");
+     output is - start end promise timeout
+     priority - 1.callstack 2.microtask queue(Promise) 3.Macrotask queue(setTimeout)
+6.Promises & ASYNC/AWAIT
+    Promise States: pending,fulfilled,rejected
+    question- async function test() {
+                 return 5;
+              }
+              console.log(test());  
+              output - Promise {5} //async wraps your return value inside a Promise automatically—so you always get a Promise, not the raw value.
+    error handling - 
+         try {
+            await something();
+            } catch (e) {
+                 // handle error
+         }
+         retry logic? fallaback?logging?
+7.THIS KEYWORD
+    Question
+    const obj = {
+        name: "JS",
+        getName: function () {
+            return this.name;
+            }
+    };
+    const fn = obj.getName;
+    console.log(fn());
+    Output? undefined (or global)
+    WHY:this depends on call-site     
+8.PROTOTYPES -Every object has hidden property:[[Prototype]]
+    Question-function Person(name) {
+               this.name = name;
+             }
+             Person.prototype.sayHi = function () {
+                console.log("Hi");
+             };
+             const p = new Person("A");
+             p.sayHi();
+             WHY works?Prototype chain lookup
+    In JavaScript, every object has an internal hidden property:
+    [[Prototype]] This is basically a link to another object.
+    You can think of it like: “If I don’t have something, ask my prototype.”
+       function Person(name) {
+          this.name = name;
+        }
+        Person.prototype.sayHi = function () {
+          console.log("Hi");
+        };
+        const p = new Person("A");
+        p.sayHi();                 
+    when you create the function- 
+       function Person(name) { ... }
+    JavaScript automatically creates:
+       Person.prototype = {constructer: Person}
+    you add a method 
+       Person.prototype.sayHi = function(){
+        console.log("Hi");
+       };
+    now:
+      Person.prototype = {
+        constructer: Person,
+        sayHi: function(){...}
+      }
+    when you do new Person("A")
+    this is imp part new does 4things behind the scenes:
+    step1: create empty object
+      const p = {};
+    step2: link prototype
+      p.[[prototype]] = Person.prototype;  
+    step3:call constructer
+      Person.call(p,"A");
+      so now p = {name:"A"} 
+    step4: Return object
+      return p;
+    why does p.sayHi() word? bcz of Prototype chain lookup  
+    prototype chain visualization-
+    p
+    ↓ [[Prototype]]
+    Person.prototype
+    ↓ [[Prototype]]
+    Object.prototype
+    ↓
+    null
+    JavaScript uses delegation, not copying
+    p does NOT copy sayHi
+    It borrows it via prototype 
+    instead of duplicating functions - bad (memory heavy)
+    this.sayHi = function(){...}
+    good shared via prototype
+    one function shared across all instances
+    If an object doesn’t have a property, JavaScript looks up the prototype chain until it finds it (or reaches null).
+    The Core Difference- prototype: A property of functions (constructors)
+                                    Used when creating objects with new
+                         __proto__ :A property of all objects
+                                    Points to the object’s internal [[Prototype]]
+        prototype is used to build objects
+        __proto__ is how objects access their prototype
+    | Feature         | `prototype`              | `__proto__`                   |
+    | --------------- | ------------------------ | ----------------------------- |
+    | Where it exists | On functions             | On all objects                |
+    | Purpose         | Define shared properties | Access object's prototype     |
+    | Used by         | `new` keyword            | JS engine during lookup       |
+    | Standard?       | Yes                      | Legacy (but widely supported) |
+    function A() {}
+    A.prototype // ✅ exists
+    Avoid using __proto__ directly.
+    Use:
+    Object.getPrototypeOf(p)
+    Object.setPrototypeOf(p, newProto)    
+    visual flow -
+     Function (Person)
+      ↓ has
+    prototype object
+      ↓ linked to
+    instance (p)
+      via __proto__                        
+    prototype → lives on constructor functions
+       __proto__ → lives on objects
+       new → connects them
+        p.__proto__ === Person.prototype is the whole game  
+        
