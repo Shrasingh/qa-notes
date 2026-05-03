@@ -1,0 +1,234 @@
+✅ STEP 1 — Create ONE GLOBAL VALIDATOR (Single Source of Truth)
+
+📁 File:
+
+src/utils/validateItemPricing.js
+
+
+Create this new file:
+
+export function validateItemPricing(items, packageSummary = {}) {
+  const invalidItems = [];
+
+  items.forEach((item) => {
+    const sale = Number(item.salePrice) || 0;
+    const extended = Number(item.extendedPrice) || 0;
+
+    const packageApplied =
+      item.packageKey &&
+      packageSummary?.[item.packageKey]?.applied === true;
+
+    const isValid =
+      sale > 0 &&
+      (extended > 0 || packageApplied);
+
+    if (!isValid) {
+      invalidItems.push(item.sku || item.itemId || `Row-${item.id}`);
+    }
+  });
+
+  return {
+    isValid: invalidItems.length === 0,
+    invalidItems,
+  };
+}
+
+
+This file is reusable everywhere.
+
+✅ STEP 2 — APPLY CHECK IN LEFT PANEL (Pickup / Delivery)
+
+📁 File:
+
+LeftPanel.jsx
+
+
+At top add:
+
+import { validateItemPricing } from "../../utils/validateItemPricing";
+
+🔥 EASY TO FIND SNIPPET (Pickup / Delivery)
+
+Find this:
+
+<FormCard title="Pickup / Delivery">
+
+
+Inside RadioGroup:
+
+Replace:
+
+onChange={(value) => {
+  dispatch(updateRoot({ field: "deliveryOption", value }));
+
+
+With:
+
+onChange={(value) => {
+  const { isValid, invalidItems } = validateItemPricing(
+    form.items,
+    form.packageSummary
+  );
+
+  if (!isValid) {
+    toast.error(
+      `Pricing missing for items: ${invalidItems.join(", ")}`
+    );
+
+    const el = document.getElementById("AUTO_SCROLL_PACKAGE");
+    scrollToField(el, 120);
+
+    return; // 🚫 BLOCK
+  }
+
+  dispatch(updateRoot({ field: "deliveryOption", value }));
+
+  requestAnimationFrame(() => {
+    const el = document.getElementById("AUTO_SCROLL_DELIVERY");
+    scrollToField(el, 120);
+  });
+}}
+
+
+Now delivery cannot be selected unless pricing valid.
+
+✅ STEP 3 — APPLY SAME CHECK IN PAYMENT SECTION
+
+📁 Same file: LeftPanel.jsx
+
+Find:
+
+<FormCard title="Payment & Summary">
+
+
+Now inside your getPaymentInputProps function
+(you already use guards there)
+
+At top of onFocus and onChange, add:
+
+const { isValid, invalidItems } = validateItemPricing(
+  form.items,
+  form.packageSummary
+);
+
+if (!isValid) {
+  toast.error(
+    `Pricing missing for items: ${invalidItems.join(", ")}`
+  );
+
+  const el = document.getElementById("AUTO_SCROLL_PACKAGE");
+  scrollToField(el, 120);
+
+  e.target.blur();
+  return;
+}
+
+
+Now payment cannot start unless pricing valid.
+
+✅ STEP 4 — APPLY SAME CHECK IN RIGHT PANEL (View Invoice)
+
+📁 File:
+
+RightPanel.jsx
+
+
+At top:
+
+import { validateItemPricing } from "../../utils/validateItemPricing";
+
+🔥 EASY TO FIND SNIPPET
+
+Find this function:
+
+const handleWatchInvoice = async (e) => {
+
+
+At TOP of that function, add:
+
+const { isValid, invalidItems } = validateItemPricing(
+  form.items,
+  form.packageSummary
+);
+
+if (!isValid) {
+  toast.error(
+    `Cannot generate invoice. Pricing missing for items: ${invalidItems.join(", ")}`
+  );
+  return; // 🚫 STOP
+}
+
+
+So now:
+
+Delivery blocked
+
+Payment blocked
+
+Invoice blocked
+
+Same rule everywhere.
+
+🔒 WHAT THIS GUARANTEES
+
+Item must satisfy:
+
+salePrice > 0
+AND
+(
+   extendedPrice > 0
+   OR
+   applied package exists
+)
+
+
+If not:
+
+Cannot select Pickup/Delivery
+
+Cannot enter Payment
+
+Cannot View Invoice
+
+Cannot leak revenue
+
+🧠 WHY THIS DESIGN IS CORRECT
+
+We:
+
+✔ Centralized logic in ONE util
+✔ Reused same logic everywhere
+✔ Avoided duplicating conditions
+✔ Kept LeftPanel flow-first enforcement
+✔ Added final firewall in RightPanel
+
+This is clean architecture.
+
+💎 OPTIONAL (Senior Level Improvement)
+
+If you want to make it even cleaner:
+
+Create wrapper guard:
+
+function guardItemPricing(form) {
+  const { isValid, invalidItems } = validateItemPricing(
+    form.items,
+    form.packageSummary
+  );
+
+  if (!isValid) {
+    toast.error(
+      `Pricing missing for items: ${invalidItems.join(", ")}`
+    );
+    return false;
+  }
+
+  return true;
+}
+
+
+Then call:
+
+if (!guardItemPricing(form)) return;
+
+

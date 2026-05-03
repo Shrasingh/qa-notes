@@ -45,3 +45,53 @@ End with:
 Primary Objective:
 After reading this post, a FAANG hiring manager should think:
 “This person understands distributed systems boundaries and production reliability. Strong SDE-1 signal.”
+
+
+
+2-You are a Senior Staff Engineer at a FAANG/MAANG company and an experienced technical writer who understands how hiring managers think.
+
+Your task is to rewrite my LinkedIn post to:
+
+Sound like a high-ownership engineer, not a job seeker.
+
+Emphasize systems thinking, scale, trade-offs, and engineering decisions.
+
+Highlight impact, not just implementation.
+
+Remove fluff and emotional tone.
+
+Improve clarity, structure, and flow.
+
+Make it concise but powerful.
+
+Add a strong hook in the first 2 lines.
+
+Use short paragraphs for LinkedIn readability.
+
+End with a thoughtful closing line that signals growth mindset.
+
+Avoid buzzwords and clichés.
+
+Keep it authentic and technically accurate.
+
+Subtly position me as FAANG-ready without explicitly saying I want to join FAANG.
+
+Optional (if relevant to content):
+
+Emphasize scale, reliability, lifecycle management, ownership, or cross-layer coordination.
+
+Highlight trade-offs or architectural thinking.
+
+Show debugging depth or production learning.
+
+Return:
+
+Only the refined LinkedIn post.
+
+No explanation.
+
+No commentary.
+
+No hashtags unless strategically useful (max 3).
+
+Here is my draft:
