@@ -268,15 +268,11 @@ One failure forced a deeper rebuild.
 
 The first digital signature integration “worked,” but failed under load — flaky health checks, dropped signatures, unclear errors.
 Instead of patching it, I redesigned the flow with explicit device health validation, clearer message handling, and predictable failure behavior.
-
 That version held up in production.
-
 The result wasn’t just cleaner code.
 Revenue loss dropped by ~30%, and coordination between sales and finance improved. More importantly, it trained me to ask:
 not “does it work?” but “does it behave correctly under real conditions?”
-
 Alongside this work, I’ve been strengthening fundamentals — maintaining a 2045 LeetCode contest rating (top ~2%) while focusing on data structures, system design basics, and backend systems built with real constraints.
-
 Curious how others here think about designing for correctness early in a system’s life.
 
 #SoftwareEngineering #SDE1 #BackendEngineering #SystemDesign

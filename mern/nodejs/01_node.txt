@@ -100,7 +100,7 @@ Why Node.js is single threaded but still scalable?
       core module ex fs,os 
       local module ex utils
       third party module ex mongoose
-diff bw requir & import  
+diff bw require & import  
      require - sync,common js
      import - es modules ,async
 npm (Node Package Manager)
@@ -147,11 +147,11 @@ async programming
 7. Event Loop (FAANG Favorite)
     Event loop manages async operations.
     Phases
-    timers
-    pending callbacks-It executes callbacks that were deferred (postponed) from previous I/O operations,Some system-level callbacks couldn’t run earlier → they are executed here it does ONLY certain system-level callbacks
-    idle
-    poll-POLL phase is where Node.js actually waits for and executes I/O operations POLL = "Wait for work + execute work"
-    check-CHECK phase executes callbacks scheduled by setImmediate(),check exist Because Node.js needed a way to:
+    1.timers
+    2.pending callbacks-It executes callbacks that were deferred (postponed) from previous I/O operations,Some system-level callbacks couldn’t run earlier → they are executed here it does ONLY certain system-level callbacks
+    3.idle
+    4.poll-POLL phase is where Node.js actually waits for and executes I/O operations POLL = "Wait for work + execute work"
+    5.check-CHECK phase executes callbacks scheduled by setImmediate(),check exist Because Node.js needed a way to:
     “Run something immediately AFTER I/O is done”
     POLL PHASE:
       ├── Has I/O? → execute callbacks
@@ -458,15 +458,11 @@ fs.readFile(__filename, () => {
   setTimeout(() => console.log("timeout"), 0);
   setImmediate(() => console.log("immediate"));
 });
-
 Output:
-
 immediate
 timeout
 Why?
-
 Flow:
-
 Poll phase (I/O callback)
 ↓
 setImmediate scheduled

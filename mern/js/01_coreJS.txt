@@ -11,9 +11,9 @@
     Hoisting behavior
     | Keyword | Scope    | Hoisted       | Reassign |
     | ------- | -------- | ------------- | -------- |
-    | var     | function | ✅ (undefined) | ✅        |
-    | let     | block    | ❌ (TDZ)       | ✅        |
-    | const   | block    | ❌ (TDZ)       | ❌        |
+    | var     | function | ✅ (undefined) | ✅     |
+    | let     | block    | ❌ (TDZ)       | ✅     |
+    | const   | block    | ❌ (TDZ)       | ❌     |
     console.log(a);
     var a = 10; //Answer: undefined
     console.log(b);
@@ -31,6 +31,7 @@
                      }
                     test(); // output - local x is hoisted ->undefined shadows global
 4.What is Closure? Function + its lexical scope  
+    a closure is when a function remembers and can access variables from its outer (lexical) scope, even after that outer function has finished running
     function outer() {
         let count = 0;
         return function inner() {
