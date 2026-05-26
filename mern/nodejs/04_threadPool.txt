@@ -139,7 +139,7 @@ Callback Queue → Event Loop → Execution
          Context switching increases
        Why don’t HTTP requests use thread pool?
           Because OS handles them asynchronously (epoll/kqueue)
-        What is thread pool starvation?
+       What is thread pool starvation?
          Long tasks blocking all threads → short tasks delayed
         How is thread pool different from event loop?
          Event loop = scheduler

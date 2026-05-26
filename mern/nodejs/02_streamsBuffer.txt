@@ -328,7 +328,7 @@ Q8. Coding — Copy a large file efficiently
    🎯 What I’m testing:
    Practical coding ability
 Q9. Flowing vs Paused mode?
-     ✅ Ideal Answer:Flowing mode:
+     Ideal Answer:Flowing mode:
      Data automatically flows
      Triggered by data event
      Paused mode:Controlled manually using read()
@@ -485,7 +485,7 @@ Q5. Can Streams block the Event Loop?:
    BUT:Heavy synchronous processing inside data handler can block event loop
    “Streams are non-blocking, but user code inside handlers can block.”
 
- Q6. What happens if you convert every chunk to string immediately?
+Q6. What happens if you convert every chunk to string immediately?
       Extra CPU overhead, Encoding cost,Reduced performance
       Better: Process as Buffer when possible
       Always process streams as Buffers unless string conversion is required.
