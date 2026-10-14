@@ -48,8 +48,8 @@
                                    Memoization
                                    A closure is a function that remembers and can access variables from its outer scope even after the outer function has finished executing.
 5.ASYNC JS- js is single threaded but handles async using 
-     callback queue,event loop
-     event loop flow-> callstack ->empty ? take from queue -> execute
+     call back queue,event loop
+     event loop flow-> call stack ->empty ? take from queue -> execute
      console.log("start");
      setTimeout(() => console.log("timeout"), 0);
      Promise.resolve().then(() => console.log("promise"));
@@ -69,7 +69,7 @@
             } catch (e) {
                  // handle error
          }
-         retry logic? fallaback?logging?
+         retry logic? fallback ? logging?
 7.THIS KEYWORD
     Question
     const obj = {
@@ -119,7 +119,7 @@
     when you do new Person("A")
     this is imp part new does 4things behind the scenes:
     step1: create empty object
-      const p = {};
+      cons t p = {};
     step2: link prototype
       p.[[prototype]] = Person.prototype;  
     step3:call constructer
